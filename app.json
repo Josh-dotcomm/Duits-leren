@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Business German Coach",
+    "slug": "business-german-coach",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0B1220",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "nl.hillco.businessgermancoach",
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"],
+        "NSMicrophoneUsageDescription": "We gebruiken de microfoon om je gesproken Duits op te nemen en van feedback te voorzien."
+      }
+    },
+    "android": {
+      "package": "nl.hillco.businessgermancoach",
+      "permissions": [
+        "RECORD_AUDIO",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_MICROPHONE",
+        "WAKE_LOCK"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-av",
+        {
+          "microphonePermission": "We gebruiken de microfoon om je gesproken Duits op te nemen."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {}
+    }
+  }
+}
