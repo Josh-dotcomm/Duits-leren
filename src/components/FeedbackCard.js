@@ -1,17 +1,28 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-// Shows the Dutch coaching feedback for a turn. When the turn has been processed
-// and there are no corrections, shows a small positive confirmation instead.
-export default function FeedbackCard({ feedback, processed }) {
-  if (feedback && feedback.trim()) {
+// Shows the Dutch coaching explanation and the corrected German example as two
+// visually distinct blocks (they are also read by two different TTS voices).
+// When the turn is processed and there's nothing to correct, shows a positive chip.
+export default function FeedbackCard({ feedbackDutch, feedbackGermanExample, processed }) {
+  const hasDutch = !!(feedbackDutch && feedbackDutch.trim());
+  const hasGerman = !!(feedbackGermanExample && feedbackGermanExample.trim());
+
+  if (hasDutch || hasGerman) {
     return (
       <View style={styles.card}>
-        <Text style={styles.heading}>🇳🇱 Feedback</Text>
-        <Text style={styles.body}>{feedback}</Text>
+        <Text style={styles.heading}>📝 Feedback</Text>
+        {hasDutch ? <Text style={styles.dutch}>{feedbackDutch}</Text> : null}
+        {hasGerman ? (
+          <View style={styles.germanBlock}>
+            <Text style={styles.germanLabel}>✓ Beter (DE)</Text>
+            <Text style={styles.german}>{feedbackGermanExample}</Text>
+          </View>
+        ) : null}
       </View>
     );
   }
+
   if (processed) {
     return (
       <View style={styles.okChip}>
@@ -33,7 +44,15 @@ const styles = StyleSheet.create({
     marginVertical: 6,
   },
   heading: { color: '#F59E0B', fontSize: 12, fontWeight: '800', marginBottom: 4 },
-  body: { color: '#FDE68A', fontSize: 15, lineHeight: 21 },
+  dutch: { color: '#FDE68A', fontSize: 15, lineHeight: 21 },
+  germanBlock: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(16,185,129,0.35)',
+  },
+  germanLabel: { color: '#6EE7B7', fontSize: 11, fontWeight: '800', marginBottom: 3 },
+  german: { color: '#D1FAE5', fontSize: 16, fontWeight: '600', lineHeight: 22 },
   okChip: {
     alignSelf: 'flex-start',
     backgroundColor: 'rgba(16,185,129,0.12)',

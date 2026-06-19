@@ -1,37 +1,65 @@
 # Business German Coach 🇩🇪📞
 
-A hands-free, **phone-call-style** language trainer for **Business German**. You
-speak German into your phone; the app transcribes it, corrects you like a strict
-tutor (in Dutch), and answers back in character as a German business contact
-("Hansi") — all out loud, like a real call.
+A hands-free, **phone-call-style** language trainer for **Business German**. You fill
+a persistent **Knowledge Base** with your company info, pick a **scenario** and an
+**AI persona**, then hold the mic and speak German. The AI plays a tough buyer who
+uses your Knowledge Base to grill you, while a Dutch coach corrects your German — all
+read aloud with the right voice per language.
 
-Built for Hillco / "Family Chicken" sales conversations, but fully retargetable
-via a single config file.
+Built for Hillco / "Family Chicken" sales conversations, but fully retargetable.
 
 ## How it works
 
 ```
-You speak (German)
-   → record (expo-av)
-   → Groq Whisper        → German transcript
-   → Groq Llama (JSON)   → { feedback (NL), reply (DE) }
-   → expo-speech         → speaks feedback in Dutch, then reply in German
+Kennisbank (saved to AsyncStorage) ─┐
+Setup (scenario + persona) ────────┼─►  injected into the LLM system prompt
+                                     │
+You hold the mic and speak (German) ┘
+   ─ release ─►  record (expo-av)
+   ─►  Groq Whisper                  ─►  German transcript
+   ─►  Groq Llama (JSON mode)        ─►  { feedback_dutch, feedback_german_example, reply }
+   ─►  expo-speech (per-language)    ─►  NL feedback → DE example → DE reply
 ```
 
-The LLM always returns **two** things:
+The app has two tabs (bottom bar): **Gesprek** (the call flow) and **Kennisbank**.
 
-| Key        | Language | Purpose                                                                 |
-| ---------- | -------- | ----------------------------------------------------------------------- |
-| `feedback` | Dutch    | Strict corrections: grammar, vocabulary, STT mishearings, **German business etiquette** (e.g. never call yourself "Herr ...", use "von der Firma" not "vom"). |
-| `reply`    | German   | The natural, in-character answer from your conversation partner.        |
+### Knowledge Base (persistent)
+The Kennisbank tab is a large multiline field where you paste all your company
+information, working methods and USPs. It's saved locally with
+`@react-native-async-storage/async-storage`, so it survives app restarts, and is
+injected into the system prompt on each call.
 
-Say a Dutch meta-command like **“Herhaal de zin maar dan goed”** and the coach
-switches to tutor mode for that turn (gives you the correct German sentence and
-stays silent as Hansi).
+### Aggressive, continuous roleplay
+The AI **is the buyer/persona** — you are selling to it. It uses the Knowledge Base
+to test you: specific questions about your methods, challenges to your USPs, and
+realistic objections. It **never ends the call** and always closes its reply with a
+question, counter-argument or new demand, forcing you to keep talking.
+
+### Dynamic setup (no hardcoded persona)
+Two fields with tap-to-fill chips: **Scenario** (goal of the call) and **AI persona**
+(who the AI plays). Both are injected into the system prompt.
+
+### Push-to-talk (no send button)
+The mic button is **hold-to-talk**: press and hold to record, **release to send**.
+
+### Three-field response + per-language TTS
+The LLM returns three strings, kept in separate languages on purpose:
+
+| Key                       | Language | Read by | Purpose |
+| ------------------------- | -------- | ------- | ------- |
+| `feedback_dutch`          | Dutch    | `nl-NL` | The explanation/correction (no German words). |
+| `feedback_german_example` | German   | `de-DE` | The single corrected model phrase. |
+| `reply`                   | German   | `de-DE` | The persona's in-character answer (ends with a question/demand). |
+
+### Better voices
+`src/audio/voices.js` calls `Speech.getAvailableVoicesAsync()` once and picks the best
+installed voice per language (preferring **Enhanced** quality + exact locale), falling
+back to the OS default.
 
 ## Tech stack (all free)
 
 - **React Native + Expo** (SDK 51)
+- **Local storage:** `@react-native-async-storage/async-storage`
 - **STT:** Groq Whisper (`whisper-large-v3`)
 - **LLM:** Groq Llama (`llama-3.3-70b-versatile`)
 - **TTS:** `expo-speech` (native on-device voices — free, offline)
@@ -42,90 +70,55 @@ stays silent as Hansi).
 1. **Install dependencies**
    ```bash
    npm install
-   # align native module versions with the Expo SDK:
-   npx expo install --fix
+   npx expo install --fix      # align native module versions with the Expo SDK
    ```
-
 2. **Add your Groq API key** (free at <https://console.groq.com/keys>)
    ```bash
    cp .env.example .env
-   # then edit .env and set:
    # EXPO_PUBLIC_GROQ_API_KEY=gsk_...
    ```
-   > ⚠️ `EXPO_PUBLIC_` variables are bundled into the app and are **not secret**.
-   > Fine for internal/testing use. For a public production app, proxy Groq
-   > through your own backend and keep the key server-side.
-
+   > ⚠️ `EXPO_PUBLIC_` vars are bundled into the app and are **not secret**. Fine for
+   > internal/testing use; proxy through a backend for a public production app.
 3. **Run it**
    ```bash
-   npx expo start
+   npx expo start          # open in Expo Go; grant microphone permission
    ```
-   Open in **Expo Go** (scan the QR code) or an emulator. Grant microphone
-   permission on first use.
-
-## Context injection
-
-Everything about *who you are* and *what you're practising* lives in
-`src/config/businessContext.js`:
-
-```js
-export const businessContext = {
-  userName: 'Sonnevelt',
-  company: 'Family Chicken',
-  goal: 'Professionele zakelijke communicatie en verkoop in Duitsland.',
-  partnerName: 'Hansi',
-  partnerRole: 'Einkäufer bei einem deutschen Lebensmittelgroßhändler.',
-  scenario: 'Ein telefonisches Verkaufsgespräch über Geflügelprodukte ...',
-};
-```
-
-This object is merged into the LLM system prompt in `src/config/prompts.js`.
-Change the values to retarget the trainer to a different person, company,
-partner, or scenario.
-
-## Background audio
-
-This build targets **Expo Go**, so audio works while the app is in the
-foreground. **Locked-screen / background recording is not possible in Expo Go.**
-
-The native config for background audio is **already in `app.json`**
-(`ios.infoPlist.UIBackgroundModes: ["audio"]` and the Android foreground-service
-permissions). To enable it:
-
-1. Build a custom dev client instead of using Expo Go:
-   ```bash
-   npx expo run:ios      # or: npx expo run:android   (or use EAS Build)
-   ```
-2. In `src/audio/audioMode.js`, set `staysActiveInBackground: true`.
-
-> iOS restricts continuous microphone capture while the screen is locked even
-> with a dev build; background audio **playback** is the reliable part. Plan the
-> UX around press-to-talk in the foreground.
 
 ## Project structure
 
 ```
-App.js                         # entry → CallScreen
-app.json                       # Expo config + iOS/Android audio permissions
+App.js                         # 2-tab shell (Gesprek / Kennisbank) + KB persistence
 src/
 ├─ config/
-│  ├─ businessContext.js        # CONTEXT INJECTION (edit me)
-│  └─ prompts.js                # buildSystemPrompt() — the dual-response contract
-├─ api/groq.js                  # Whisper STT + Llama chat (JSON mode)
+│  ├─ businessContext.js        # learnerProfile + setup defaults & suggestions
+│  └─ prompts.js                # buildSystemPrompt({scenario, persona, knowledgeBaseText, learner})
+├─ api/groq.js                  # Whisper STT + Llama chat (3-key JSON)
 ├─ audio/
 │  ├─ audioMode.js              # audio session (record vs. playback)
 │  ├─ recorder.js               # start/stop recording → file URI
-│  └─ speech.js                 # speak NL feedback, then DE reply
+│  ├─ voices.js                 # enhanced nl-NL / de-DE voice selection
+│  └─ speech.js                 # speak NL feedback → DE example → DE reply
+├─ storage/knowledgeBase.js     # AsyncStorage load/save of the Kennisbank
 ├─ state/conversationStore.js   # bounded message history for the LLM
-├─ hooks/useConversation.js     # state machine: idle→recording→…→speaking
-├─ screens/CallScreen.js        # the "phone call" UI
-└─ components/                  # StatusPill, TranscriptBubble, FeedbackCard, CallControls
+├─ hooks/useConversation.js     # state machine + push-to-talk
+├─ screens/
+│  ├─ SetupScreen.js            # pre-call scenario + persona picker
+│  ├─ CallScreen.js             # the "phone call" UI
+│  └─ KnowledgeBaseScreen.js    # paste & persist company info / USPs
+└─ components/                  # StatusPill, TranscriptBubble, FeedbackCard, CallControls, TabBar
 ```
 
-## Notes / next steps
+## Background audio
 
-- **Model choice:** swap `LLM_MODEL` to `llama-3.1-8b-instant` in
-  `src/api/groq.js` for lower latency, or `STT_MODEL` to
-  `whisper-large-v3-turbo` for faster transcription.
-- **No promises:** Hansi is prompted never to put firm Family Chicken prices,
-  stock, or delivery commitments into your mouth — those stay with the human.
+This build targets **Expo Go**, so audio works in the foreground. Locked-screen
+recording needs a custom dev build: the iOS `UIBackgroundModes` and Android
+foreground-service config are already in `app.json` — build a dev client
+(`npx expo run:ios` / `run:android`) and set `staysActiveInBackground: true` in
+`src/audio/audioMode.js`. (iOS still restricts continuous locked-screen mic capture.)
+
+## Notes
+
+- **Model/latency tuning:** in `src/api/groq.js`, swap `LLM_MODEL` to
+  `llama-3.1-8b-instant` or `STT_MODEL` to `whisper-large-v3-turbo` for lower latency.
+- **No promises:** the persona is instructed never to invent firm Family Chicken
+  prices, stock, or delivery commitments — it pushes the learner to defend their own.

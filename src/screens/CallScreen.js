@@ -4,20 +4,23 @@ import {
   View,
   Text,
   ScrollView,
+  Pressable,
   StyleSheet,
   Platform,
   StatusBar as RNStatusBar,
 } from 'react-native';
 import { useConversation, STATUS } from '../hooks/useConversation';
-import { businessContext } from '../config/businessContext';
+import { learnerProfile } from '../config/businessContext';
 import { setModeForPlayback } from '../audio/audioMode';
 import StatusPill from '../components/StatusPill';
 import TranscriptBubble from '../components/TranscriptBubble';
 import FeedbackCard from '../components/FeedbackCard';
 import CallControls from '../components/CallControls';
 
-export default function CallScreen() {
-  const { status, turns, error, isBusy, toggle, replay, reset } = useConversation(businessContext);
+// `setup` = { scenario, persona }; `onExit` returns to the Setup screen.
+export default function CallScreen({ setup, onExit }) {
+  const { status, turns, error, isBusy, startTalking, stopTalking, replay, reset } =
+    useConversation(setup);
   const scrollRef = useRef(null);
 
   // Initialise the audio session once when the screen mounts.
@@ -36,10 +39,25 @@ export default function CallScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <Text style={styles.partner}>{businessContext.partnerName}</Text>
-        <Text style={styles.role}>{businessContext.partnerRole}</Text>
+        <View style={styles.headerRow}>
+          <View style={styles.headerText}>
+            <Text style={styles.persona} numberOfLines={1}>
+              {setup.persona}
+            </Text>
+            <Text style={styles.scenario} numberOfLines={2}>
+              {setup.scenario}
+            </Text>
+          </View>
+          <Pressable
+            onPress={onExit}
+            disabled={isBusy}
+            style={[styles.exitBtn, isBusy && styles.disabled]}
+          >
+            <Text style={styles.exitText}>⚙ Wijzig</Text>
+          </Pressable>
+        </View>
         <Text style={styles.context}>
-          Jij: {businessContext.userName} · {businessContext.company}
+          Jij: {learnerProfile.userName} · {learnerProfile.company}
         </Text>
         <View style={styles.statusWrap}>
           <StatusPill status={status} />
@@ -60,27 +78,26 @@ export default function CallScreen() {
       >
         {turns.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>Bel Hansi 📞</Text>
+            <Text style={styles.emptyTitle}>Start het gesprek 📞</Text>
             <Text style={styles.emptyBody}>
-              Tik op “Spreken”, stel je voor in het Duits en begin het
-              verkoopgesprek. Je krijgt eerst Nederlandse feedback, daarna het
-              antwoord van Hansi.
+              Houd de microfoonknop ingedrukt, stel je voor in het Duits en laat los om
+              te versturen. Je hoort eerst Nederlandse feedback, dan het juiste Duitse
+              voorbeeld, en daarna het antwoord van de {setup.persona}.
             </Text>
             <Text style={styles.emptyHint}>
-              Tip: zeg “Herhaal de zin maar dan goed” om de juiste Duitse zin te
-              horen.
+              Tip: zeg “Herhaal de zin maar dan goed” voor de juiste Duitse zin.
             </Text>
           </View>
         ) : (
           turns.map((turn) => (
             <View key={turn.id} style={styles.turn}>
               <TranscriptBubble side="you" name="Jij (DE)" text={turn.you} />
-              <FeedbackCard feedback={turn.feedback} processed={turn.done} />
-              <TranscriptBubble
-                side="partner"
-                name={`${businessContext.partnerName} (DE)`}
-                text={turn.reply}
+              <FeedbackCard
+                feedbackDutch={turn.feedbackDutch}
+                feedbackGermanExample={turn.feedbackGermanExample}
+                processed={turn.done}
               />
+              <TranscriptBubble side="partner" name={setup.persona} text={turn.reply} />
             </View>
           ))
         )}
@@ -90,7 +107,8 @@ export default function CallScreen() {
         <CallControls
           status={status}
           isBusy={isBusy}
-          onToggle={toggle}
+          onStartTalking={startTalking}
+          onStopTalking={stopTalking}
           onReplay={() => replay(lastTurn)}
           onReset={reset}
           canReplay={!!lastTurn && lastTurn.done && status !== STATUS.RECORDING}
@@ -107,9 +125,20 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? RNStatusBar.currentHeight : 0,
   },
   header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
-  partner: { color: '#F9FAFB', fontSize: 30, fontWeight: '800' },
-  role: { color: '#9CA3AF', fontSize: 13, marginTop: 2 },
-  context: { color: '#6B7280', fontSize: 12, marginTop: 6 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  headerText: { flex: 1, paddingRight: 12 },
+  persona: { color: '#F9FAFB', fontSize: 24, fontWeight: '800' },
+  scenario: { color: '#9CA3AF', fontSize: 13, marginTop: 3 },
+  exitBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  exitText: { color: '#E5E7EB', fontSize: 13, fontWeight: '600' },
+  disabled: { opacity: 0.4 },
+  context: { color: '#6B7280', fontSize: 12, marginTop: 8 },
   statusWrap: { marginTop: 12 },
   errorBanner: {
     marginHorizontal: 20,

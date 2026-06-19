@@ -6,7 +6,7 @@ const META = {
   [STATUS.IDLE]: { label: 'Klaar — tik om te spreken', color: '#3B82F6', busy: false },
   [STATUS.RECORDING]: { label: 'Aan het opnemen…', color: '#EF4444', busy: false },
   [STATUS.TRANSCRIBING]: { label: 'Transcriberen…', color: '#F59E0B', busy: true },
-  [STATUS.THINKING]: { label: 'Hansi denkt na…', color: '#A855F7', busy: true },
+  [STATUS.THINKING]: { label: 'Aan het nadenken…', color: '#A855F7', busy: true },
   [STATUS.SPEAKING]: { label: 'Aan het afspelen…', color: '#10B981', busy: true },
   [STATUS.ERROR]: { label: 'Er ging iets mis', color: '#EF4444', busy: false },
 };
