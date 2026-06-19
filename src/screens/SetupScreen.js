@@ -27,7 +27,7 @@ function Chip({ text, active, onPress }) {
 
 // Pre-call setup: choose the scenario (goal of the call) and the AI persona.
 // These are injected into the LLM system prompt by useConversation/buildSystemPrompt.
-export default function SetupScreen({ onStart }) {
+export default function SetupScreen({ onStart, hasKnowledgeBase, onOpenKnowledgeBase }) {
   const [scenario, setScenario] = useState(defaultCallSetup.scenario);
   const [persona, setPersona] = useState(defaultCallSetup.persona);
 
@@ -75,6 +75,14 @@ export default function SetupScreen({ onStart }) {
             ))}
           </View>
 
+          <Pressable onPress={onOpenKnowledgeBase} style={styles.kbRow}>
+            <Text style={[styles.kbStatus, hasKnowledgeBase ? styles.kbOn : styles.kbOff]}>
+              {hasKnowledgeBase
+                ? '✓ Kennisbank actief — de AI test je hierop'
+                : '⚠ Geen kennisbank — tik om in te vullen voor scherpere vragen'}
+            </Text>
+          </Pressable>
+
           <Pressable
             onPress={() => onStart({ scenario: scenario.trim(), persona: persona.trim() })}
             disabled={!canStart}
@@ -84,7 +92,8 @@ export default function SetupScreen({ onStart }) {
           </Pressable>
 
           <Text style={styles.note}>
-            De AI speelt strikt deze persona en stelt vragen die passen bij het scenario.
+            De AI speelt strikt deze persona, test je op de kennisbank en blijft
+            doorvragen — het gesprek stopt nooit vanzelf.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -126,8 +135,12 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: '#1D4ED8', borderColor: '#1D4ED8' },
   chipText: { color: '#D1D5DB', fontSize: 13 },
   chipTextActive: { color: '#fff', fontWeight: '700' },
+  kbRow: { marginTop: 24 },
+  kbStatus: { fontSize: 13, fontWeight: '600' },
+  kbOn: { color: '#6EE7B7' },
+  kbOff: { color: '#FBBF24' },
   startBtn: {
-    marginTop: 32,
+    marginTop: 16,
     backgroundColor: '#10B981',
     borderRadius: 16,
     height: 56,

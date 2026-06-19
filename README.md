@@ -1,36 +1,46 @@
 # Business German Coach 🇩🇪📞
 
-A hands-free, **phone-call-style** language trainer for **Business German**. Before
-each call you pick a **scenario** and an **AI persona**; then you hold the mic,
-speak German, and on release the app transcribes you, corrects you like a strict
-tutor (in Dutch), shows the correct German phrasing, and answers back in character
-as your chosen persona — all read aloud with the right voice per language.
+A hands-free, **phone-call-style** language trainer for **Business German**. You fill
+a persistent **Knowledge Base** with your company info, pick a **scenario** and an
+**AI persona**, then hold the mic and speak German. The AI plays a tough buyer who
+uses your Knowledge Base to grill you, while a Dutch coach corrects your German — all
+read aloud with the right voice per language.
 
 Built for Hillco / "Family Chicken" sales conversations, but fully retargetable.
 
 ## How it works
 
 ```
-Setup (scenario + persona)  ──►  injected into the LLM system prompt
-        │
-You hold the mic and speak (German)
+Kennisbank (saved to AsyncStorage) ─┐
+Setup (scenario + persona) ────────┼─►  injected into the LLM system prompt
+                                     │
+You hold the mic and speak (German) ┘
    ─ release ─►  record (expo-av)
    ─►  Groq Whisper                  ─►  German transcript
    ─►  Groq Llama (JSON mode)        ─►  { feedback_dutch, feedback_german_example, reply }
    ─►  expo-speech (per-language)    ─►  NL feedback → DE example → DE reply
 ```
 
-### Dynamic setup (no hardcoded persona)
-The Setup screen has two fields (with tap-to-fill suggestion chips):
-- **Scenario** — the goal of the call (e.g. "Bellen over een monsterpakket").
-- **AI persona** — who the AI plays (e.g. "Supermarktmanager", "Inkoper", "Poortwachter").
+The app has two tabs (bottom bar): **Gesprek** (the call flow) and **Kennisbank**.
 
-Both are injected into the system prompt; the AI **strictly** stays in that persona
-and asks the questions that role would ask for that scenario.
+### Knowledge Base (persistent)
+The Kennisbank tab is a large multiline field where you paste all your company
+information, working methods and USPs. It's saved locally with
+`@react-native-async-storage/async-storage`, so it survives app restarts, and is
+injected into the system prompt on each call.
+
+### Aggressive, continuous roleplay
+The AI **is the buyer/persona** — you are selling to it. It uses the Knowledge Base
+to test you: specific questions about your methods, challenges to your USPs, and
+realistic objections. It **never ends the call** and always closes its reply with a
+question, counter-argument or new demand, forcing you to keep talking.
+
+### Dynamic setup (no hardcoded persona)
+Two fields with tap-to-fill chips: **Scenario** (goal of the call) and **AI persona**
+(who the AI plays). Both are injected into the system prompt.
 
 ### Push-to-talk (no send button)
 The mic button is **hold-to-talk**: press and hold to record, **release to send**.
-There is no separate "send" — releasing immediately ships the audio to Whisper.
 
 ### Three-field response + per-language TTS
 The LLM returns three strings, kept in separate languages on purpose:
@@ -39,21 +49,17 @@ The LLM returns three strings, kept in separate languages on purpose:
 | ------------------------- | -------- | ------- | ------- |
 | `feedback_dutch`          | Dutch    | `nl-NL` | The explanation/correction (no German words). |
 | `feedback_german_example` | German   | `de-DE` | The single corrected model phrase. |
-| `reply`                   | German   | `de-DE` | The persona's in-character answer. |
-
-Because German never appears in the Dutch field, the Dutch voice never has to
-mangle German words. The three parts are spoken **sequentially**, swapping the
-TTS voice between them.
+| `reply`                   | German   | `de-DE` | The persona's in-character answer (ends with a question/demand). |
 
 ### Better voices
-`src/audio/voices.js` calls `Speech.getAvailableVoicesAsync()` once and picks the
-best installed voice per language — preferring **Enhanced** quality and the exact
-locale (`nl-NL`, `de-DE`) — then passes that `voice` to every `Speech.speak`. If no
-enhanced voice is installed it falls back to the OS default.
+`src/audio/voices.js` calls `Speech.getAvailableVoicesAsync()` once and picks the best
+installed voice per language (preferring **Enhanced** quality + exact locale), falling
+back to the OS default.
 
 ## Tech stack (all free)
 
 - **React Native + Expo** (SDK 51)
+- **Local storage:** `@react-native-async-storage/async-storage`
 - **STT:** Groq Whisper (`whisper-large-v3`)
 - **LLM:** Groq Llama (`llama-3.3-70b-versatile`)
 - **TTS:** `expo-speech` (native on-device voices — free, offline)
@@ -81,23 +87,25 @@ enhanced voice is installed it falls back to the OS default.
 ## Project structure
 
 ```
-App.js                         # router: SetupScreen → CallScreen
+App.js                         # 2-tab shell (Gesprek / Kennisbank) + KB persistence
 src/
 ├─ config/
 │  ├─ businessContext.js        # learnerProfile + setup defaults & suggestions
-│  └─ prompts.js                # buildSystemPrompt({scenario, persona, learner})
+│  └─ prompts.js                # buildSystemPrompt({scenario, persona, knowledgeBaseText, learner})
 ├─ api/groq.js                  # Whisper STT + Llama chat (3-key JSON)
 ├─ audio/
 │  ├─ audioMode.js              # audio session (record vs. playback)
 │  ├─ recorder.js               # start/stop recording → file URI
 │  ├─ voices.js                 # enhanced nl-NL / de-DE voice selection
 │  └─ speech.js                 # speak NL feedback → DE example → DE reply
+├─ storage/knowledgeBase.js     # AsyncStorage load/save of the Kennisbank
 ├─ state/conversationStore.js   # bounded message history for the LLM
 ├─ hooks/useConversation.js     # state machine + push-to-talk
 ├─ screens/
 │  ├─ SetupScreen.js            # pre-call scenario + persona picker
-│  └─ CallScreen.js             # the "phone call" UI
-└─ components/                  # StatusPill, TranscriptBubble, FeedbackCard, CallControls
+│  ├─ CallScreen.js             # the "phone call" UI
+│  └─ KnowledgeBaseScreen.js    # paste & persist company info / USPs
+└─ components/                  # StatusPill, TranscriptBubble, FeedbackCard, CallControls, TabBar
 ```
 
 ## Background audio
@@ -112,5 +120,5 @@ foreground-service config are already in `app.json` — build a dev client
 
 - **Model/latency tuning:** in `src/api/groq.js`, swap `LLM_MODEL` to
   `llama-3.1-8b-instant` or `STT_MODEL` to `whisper-large-v3-turbo` for lower latency.
-- **No promises:** the persona is instructed never to put firm Family Chicken
-  prices, stock, or delivery commitments into the learner's mouth.
+- **No promises:** the persona is instructed never to invent firm Family Chicken
+  prices, stock, or delivery commitments — it pushes the learner to defend their own.
