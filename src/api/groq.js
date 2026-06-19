@@ -58,7 +58,8 @@ export async function transcribeAudio(uri) {
   return (data.text || '').trim();
 }
 
-// Send the conversation to the LLM and get back { feedback, reply }.
+// Send the conversation to the LLM and get back
+// { feedback_dutch, feedback_german_example, reply }.
 export async function chatComplete(messages) {
   const apiKey = getApiKey();
 
@@ -73,7 +74,7 @@ export async function chatComplete(messages) {
       messages,
       temperature: 0.4,
       max_tokens: 700,
-      // Forces strict JSON output that matches our { feedback, reply } contract.
+      // Forces strict JSON output that matches our 3-key contract.
       response_format: { type: 'json_object' },
     }),
   });
@@ -85,14 +86,14 @@ export async function chatComplete(messages) {
 
   const data = await res.json();
   const content = data?.choices?.[0]?.message?.content ?? '';
-  return parseDualResponse(content);
+  return parseStructuredResponse(content);
 }
 
-// Robustly turn the model output into { feedback, reply }, even if the model
-// wraps the JSON in stray text.
-function parseDualResponse(content) {
-  const fallback = { feedback: '', reply: '' };
-  if (!content) return fallback;
+// Robustly turn the model output into { feedback_dutch, feedback_german_example,
+// reply }, even if the model wraps the JSON in stray text.
+function parseStructuredResponse(content) {
+  const empty = { feedback_dutch: '', feedback_german_example: '', reply: '' };
+  if (!content) return empty;
 
   try {
     return normalize(JSON.parse(content));
@@ -107,15 +108,17 @@ function parseDualResponse(content) {
         /* fall through */
       }
     }
-    // Last resort: treat the whole thing as the spoken reply.
-    return { feedback: '', reply: content.trim() };
+    // Last resort: treat the whole thing as the spoken (German) reply.
+    return { ...empty, reply: content.trim() };
   }
 }
 
 function normalize(obj) {
+  const str = (v) => (typeof v === 'string' ? v.trim() : '');
   return {
-    feedback: typeof obj.feedback === 'string' ? obj.feedback.trim() : '',
-    reply: typeof obj.reply === 'string' ? obj.reply.trim() : '',
+    feedback_dutch: str(obj.feedback_dutch),
+    feedback_german_example: str(obj.feedback_german_example),
+    reply: str(obj.reply),
   };
 }
 

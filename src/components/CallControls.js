@@ -2,19 +2,22 @@ import React from 'react';
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { STATUS } from '../hooks/useConversation';
 
-// Bottom control bar: the big press-to-talk button plus replay / reset.
-export default function CallControls({ status, isBusy, onToggle, onReplay, onReset, canReplay }) {
+// Bottom control bar. The mic is PUSH-TO-TALK: hold to record, release to send.
+// There is no separate "send" button — releasing auto-sends the audio.
+export default function CallControls({
+  status,
+  isBusy,
+  onStartTalking,
+  onStopTalking,
+  onReplay,
+  onReset,
+  canReplay,
+}) {
   const recording = status === STATUS.RECORDING;
 
-  let mainLabel = 'Spreken';
-  let mainColor = '#10B981';
-  if (recording) {
-    mainLabel = 'Stop & verstuur';
-    mainColor = '#EF4444';
-  } else if (isBusy) {
-    mainLabel = 'Bezig…';
-    mainColor = '#374151';
-  }
+  let hint = 'Houd ingedrukt om te spreken';
+  if (recording) hint = 'Laat los om te versturen';
+  else if (isBusy) hint = 'Even geduld…';
 
   return (
     <View style={styles.wrap}>
@@ -36,24 +39,31 @@ export default function CallControls({ status, isBusy, onToggle, onReplay, onRes
       </View>
 
       <Pressable
-        onPress={onToggle}
+        onPressIn={isBusy ? undefined : onStartTalking}
+        onPressOut={isBusy ? undefined : onStopTalking}
         disabled={isBusy}
-        style={[styles.mainButton, { backgroundColor: mainColor }]}
+        style={({ pressed }) => [
+          styles.mic,
+          recording && styles.micRecording,
+          isBusy && styles.micBusy,
+          pressed && !isBusy && styles.micPressed,
+        ]}
       >
         {isBusy ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color="#fff" size="large" />
         ) : (
-          <Text style={styles.mainIcon}>{recording ? '■' : '🎙'}</Text>
+          <Text style={styles.micIcon}>{recording ? '●' : '🎙'}</Text>
         )}
-        <Text style={styles.mainLabel}>{mainLabel}</Text>
       </Pressable>
+
+      <Text style={styles.hint}>{hint}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingTop: 8, paddingBottom: 8 },
-  sideRow: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 12 },
+  wrap: { paddingTop: 10, paddingBottom: 12, alignItems: 'center' },
+  sideRow: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 16 },
   secondary: {
     paddingVertical: 8,
     paddingHorizontal: 14,
@@ -63,14 +73,18 @@ const styles = StyleSheet.create({
   },
   secondaryText: { color: '#E5E7EB', fontSize: 13, fontWeight: '600' },
   disabled: { opacity: 0.4 },
-  mainButton: {
-    height: 64,
-    borderRadius: 32,
-    flexDirection: 'row',
+  mic: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#10B981',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    elevation: 4,
   },
-  mainIcon: { fontSize: 22, color: '#fff' },
-  mainLabel: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  micPressed: { backgroundColor: '#059669', transform: [{ scale: 0.96 }] },
+  micRecording: { backgroundColor: '#EF4444', transform: [{ scale: 1.06 }] },
+  micBusy: { backgroundColor: '#374151' },
+  micIcon: { fontSize: 36, color: '#fff' },
+  hint: { color: '#9CA3AF', fontSize: 14, fontWeight: '600', marginTop: 12 },
 });
