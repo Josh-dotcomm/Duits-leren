@@ -51,7 +51,7 @@ export default function App() {
   };
 
   // Both/all tabs stay mounted (toggled with display:none) so an in-progress
-  // call — and its recording / TTS state — survives switching tabs.
+  // call (and its recording / TTS state) survives switching tabs.
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />

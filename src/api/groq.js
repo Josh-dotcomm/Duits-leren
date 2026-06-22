@@ -45,7 +45,7 @@ export async function transcribeAudio(uri, { language = 'de' } = {}) {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      // NB: do NOT set Content-Type — fetch adds the multipart boundary itself.
+      // NB: do NOT set Content-Type; fetch adds the multipart boundary itself.
     },
     body: form,
   });
@@ -73,7 +73,7 @@ export async function chatComplete(messages) {
     body: JSON.stringify({
       model: LLM_MODEL,
       messages,
-      temperature: 0.4,
+      temperature: 0.3,
       max_tokens: 700,
       // Forces strict JSON output that matches our 3-key contract.
       response_format: { type: 'json_object' },

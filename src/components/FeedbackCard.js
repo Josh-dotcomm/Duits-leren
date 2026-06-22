@@ -27,7 +27,7 @@ export default function FeedbackCard({ feedbackDutch, feedbackGermanExample, pro
   if (processed) {
     return (
       <View style={styles.okChip}>
-        <Text style={styles.okText}>Geen correcties — goed gezegd</Text>
+        <Text style={styles.okText}>Geen correcties</Text>
       </View>
     );
   }

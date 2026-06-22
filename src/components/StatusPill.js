@@ -4,12 +4,12 @@ import { STATUS } from '../hooks/useConversation';
 import { theme } from '../config/theme';
 
 const META = {
-  [STATUS.IDLE]: { label: 'Klaar — tik om te spreken', color: theme.textMuted, busy: false },
-  [STATUS.RECORDING]: { label: 'Aan het opnemen…', color: theme.accentDark, busy: false },
-  [STATUS.TRANSCRIBING]: { label: 'Transcriberen…', color: theme.accent, busy: true },
-  [STATUS.THINKING]: { label: 'Aan het nadenken…', color: theme.accent, busy: true },
-  [STATUS.SPEAKING]: { label: 'Aan het afspelen…', color: theme.success, busy: true },
-  [STATUS.ERROR]: { label: 'Er ging iets mis', color: theme.danger, busy: false },
+  [STATUS.IDLE]: { label: 'Klaar', color: theme.textMuted, busy: false },
+  [STATUS.RECORDING]: { label: 'Opnemen', color: theme.accentDark, busy: false },
+  [STATUS.TRANSCRIBING]: { label: 'Transcriberen', color: theme.accent, busy: true },
+  [STATUS.THINKING]: { label: 'Nadenken', color: theme.accent, busy: true },
+  [STATUS.SPEAKING]: { label: 'Afspelen', color: theme.success, busy: true },
+  [STATUS.ERROR]: { label: 'Fout', color: theme.danger, busy: false },
 };
 
 export default function StatusPill({ status }) {

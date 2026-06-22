@@ -139,9 +139,7 @@ export default function ProfileScreen({ profile, voicePrefs, onSave }) {
 
           <Text style={[styles.label, styles.labelSpaced]}>Stemmen</Text>
           <Text style={styles.hint}>
-            Kies de stem voor de Nederlandse feedback en het Duitse voorbeeld. Tip:
-            installeer in de instellingen van je toestel een “verbeterde” stem voor
-            de beste kwaliteit.
+            Installeer een verbeterde stem in je toestelinstellingen voor de beste kwaliteit.
           </Text>
           <VoiceSection
             title="Nederlands (feedback)"
@@ -159,7 +157,7 @@ export default function ProfileScreen({ profile, voicePrefs, onSave }) {
           />
 
           <Pressable onPress={handleSave} disabled={saving} style={[styles.saveBtn, saving && styles.disabled]}>
-            <Text style={styles.saveText}>{saving ? 'Opslaan…' : saved ? 'Opgeslagen' : 'Opslaan'}</Text>
+            <Text style={styles.saveText}>{saving ? 'Opslaan' : saved ? 'Opgeslagen' : 'Opslaan'}</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

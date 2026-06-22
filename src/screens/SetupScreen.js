@@ -76,7 +76,7 @@ export default function SetupScreen({ onStart, hasKnowledgeBase, onOpenKnowledge
 
           <Pressable onPress={onOpenKnowledgeBase} style={styles.kbRow}>
             <Text style={[styles.kbStatus, hasKnowledgeBase ? styles.kbOn : styles.kbOff]}>
-              {hasKnowledgeBase ? 'Kennisbank actief' : 'Geen kennisbank — tik om in te vullen'}
+              {hasKnowledgeBase ? 'Kennisbank actief' : 'Kennisbank invullen'}
             </Text>
           </Pressable>
 

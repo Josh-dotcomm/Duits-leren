@@ -80,11 +80,7 @@ export default function CallScreen({ setup, onExit }) {
         {turns.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>Start het gesprek</Text>
-            <Text style={styles.emptyBody}>
-              Tik op de microfoon, stel je voor in het Duits en tik opnieuw om te
-              versturen. Je hoort eerst Nederlandse feedback, dan het juiste Duitse
-              voorbeeld, en daarna het antwoord van de {setup.persona}.
-            </Text>
+            <Text style={styles.emptyBody}>Tik op de microfoon om te beginnen.</Text>
           </View>
         ) : (
           turns.map((turn) => (
