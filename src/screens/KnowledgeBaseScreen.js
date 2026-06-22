@@ -1,22 +1,36 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   SafeAreaView,
   View,
   Text,
   TextInput,
   Pressable,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   StatusBar as RNStatusBar,
   StyleSheet,
 } from 'react-native';
+import { theme } from '../config/theme';
+import { useDictation } from '../hooks/useDictation';
+import { MicIcon, StopIcon } from '../components/icons';
 
-// The Kennisbank: a large multiline field where the user pastes all their
-// company info, working methods and USPs. Persisted via AsyncStorage by the
-// parent (App), which passes the value + change/save handlers in.
+// The Kennisbank: a large multiline field where the user pastes (or dictates)
+// all their company info, working methods and USPs. Persisted via AsyncStorage
+// by the parent (App).
 export default function KnowledgeBaseScreen({ value, onChange, onSave }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Dictation: transcript is appended to the existing text (Dutch).
+  const appendText = useCallback(
+    (t) => {
+      setSaved(false);
+      onChange((prev) => (prev && prev.trim() ? `${prev.trimEnd()}\n${t}` : t));
+    },
+    [onChange]
+  );
+  const dictation = useDictation({ language: 'nl', onText: appendText });
 
   const handleSave = async () => {
     setSaving(true);
@@ -24,6 +38,10 @@ export default function KnowledgeBaseScreen({ value, onChange, onSave }) {
     setSaving(false);
     setSaved(ok);
   };
+
+  let micHint = 'Inspreken';
+  if (dictation.isRecording) micHint = 'Stop';
+  else if (dictation.isTranscribing) micHint = '…';
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -33,11 +51,6 @@ export default function KnowledgeBaseScreen({ value, onChange, onSave }) {
       >
         <View style={styles.header}>
           <Text style={styles.title}>Kennisbank</Text>
-          <Text style={styles.subtitle}>
-            Plak hier alle bedrijfsinformatie, werkwijzen en USP's (bijv. het
-            “Family Chicken”-document). De AI gebruikt dit om je tijdens het gesprek
-            kritisch te testen. Het wordt lokaal op dit apparaat bewaard.
-          </Text>
         </View>
 
         <TextInput
@@ -47,24 +60,40 @@ export default function KnowledgeBaseScreen({ value, onChange, onSave }) {
             onChange(t);
             if (saved) setSaved(false);
           }}
-          placeholder="Plak hier: bedrijfsinfo, werkwijzen, USP's, prijsbeleid, certificeringen, veelgestelde vragen…"
-          placeholderTextColor="#6B7280"
+          placeholder="Bedrijfsinfo, werkwijzen, USP's…"
+          placeholderTextColor={theme.textFaint}
           multiline
           textAlignVertical="top"
           scrollEnabled
         />
 
         <View style={styles.footer}>
-          <Text style={styles.count}>{value ? value.length : 0} tekens</Text>
+          <Pressable
+            onPress={dictation.isTranscribing ? undefined : dictation.toggle}
+            disabled={dictation.isTranscribing}
+            style={[styles.micBtn, dictation.isRecording && styles.micBtnRecording]}
+          >
+            {dictation.isTranscribing ? (
+              <ActivityIndicator size="small" color={theme.accent} />
+            ) : dictation.isRecording ? (
+              <StopIcon size={16} color={theme.onAccent} />
+            ) : (
+              <MicIcon size={16} color={theme.accent} strokeWidth={2.2} />
+            )}
+            <Text style={[styles.micText, dictation.isRecording && styles.micTextRecording]}>
+              {micHint}
+            </Text>
+          </Pressable>
+
           <Pressable
             onPress={handleSave}
             disabled={saving}
             style={[styles.saveBtn, saving && styles.disabled]}
           >
-            <Text style={styles.saveText}>{saving ? 'Opslaan…' : 'Opslaan'}</Text>
+            <Text style={styles.saveText}>{saving ? 'Opslaan…' : saved ? 'Opgeslagen' : 'Opslaan'}</Text>
           </Pressable>
         </View>
-        {saved ? <Text style={styles.savedNote}>✓ Opgeslagen op dit apparaat</Text> : null}
+        {dictation.error ? <Text style={styles.error}>{dictation.error}</Text> : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -73,21 +102,20 @@ export default function KnowledgeBaseScreen({ value, onChange, onSave }) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#0B1220',
+    backgroundColor: theme.bg,
     paddingTop: Platform.OS === 'android' ? RNStatusBar.currentHeight : 0,
   },
   flex: { flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 10 },
-  title: { color: '#F9FAFB', fontSize: 24, fontWeight: '800' },
-  subtitle: { color: '#9CA3AF', fontSize: 13, lineHeight: 19, marginTop: 6 },
+  title: { color: theme.text, fontSize: 24, fontWeight: '800' },
   input: {
     flex: 1,
     marginHorizontal: 20,
-    backgroundColor: '#111827',
-    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: theme.inputBg,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 12,
-    color: '#F9FAFB',
+    color: theme.text,
     fontSize: 15,
     lineHeight: 21,
     padding: 14,
@@ -98,15 +126,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 12,
+    paddingBottom: 4,
   },
-  count: { color: '#6B7280', fontSize: 12 },
+  micBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.borderStrong,
+  },
+  micBtnRecording: { backgroundColor: theme.accentDark, borderColor: theme.accentDark },
+  micText: { color: theme.accent, fontSize: 14, fontWeight: '700' },
+  micTextRecording: { color: theme.onAccent },
   saveBtn: {
-    backgroundColor: '#10B981',
+    backgroundColor: theme.accent,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 28,
   },
   disabled: { opacity: 0.5 },
-  saveText: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  savedNote: { color: '#6EE7B7', fontSize: 12, textAlign: 'right', paddingHorizontal: 20, paddingTop: 8 },
+  saveText: { color: theme.onAccent, fontSize: 16, fontWeight: '800' },
+  error: { color: theme.danger, fontSize: 12, paddingHorizontal: 20, paddingTop: 6 },
 });

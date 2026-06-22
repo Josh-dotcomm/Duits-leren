@@ -41,11 +41,7 @@ export async function stopRecording() {
   try {
     await recording.stopAndUnloadAsync();
   } catch (_) {
-    // Already stopped/unloaded — ignore.
+    // Already stopped/unloaded; ignore.
   }
   return recording.getURI();
-}
-
-export function isRecording() {
-  return activeRecording !== null;
 }

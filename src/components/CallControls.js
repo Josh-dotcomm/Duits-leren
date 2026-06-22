@@ -1,22 +1,23 @@
 import React from 'react';
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { STATUS } from '../hooks/useConversation';
+import { theme } from '../config/theme';
+import { MicIcon, StopIcon, RepeatIcon, CloseIcon } from './icons';
 
-// Bottom control bar. The mic is PUSH-TO-TALK: hold to record, release to send.
-// There is no separate "send" button — releasing auto-sends the audio.
+// Bottom control bar. The mic is TAP-TO-TOGGLE: tap once to start recording,
+// tap again to stop and auto-send. No press-and-hold, no separate send button.
 export default function CallControls({
   status,
   isBusy,
-  onStartTalking,
-  onStopTalking,
+  onToggle,
   onReplay,
   onReset,
   canReplay,
 }) {
   const recording = status === STATUS.RECORDING;
 
-  let hint = 'Houd ingedrukt om te spreken';
-  if (recording) hint = 'Laat los om te versturen';
+  let hint = 'Tik om te spreken';
+  if (recording) hint = 'Tik om te stoppen';
   else if (isBusy) hint = 'Even geduld…';
 
   return (
@@ -27,20 +28,21 @@ export default function CallControls({
           disabled={!canReplay || isBusy}
           style={[styles.secondary, (!canReplay || isBusy) && styles.disabled]}
         >
-          <Text style={styles.secondaryText}>↺ Herhaal</Text>
+          <RepeatIcon size={15} color={theme.textMuted} />
+          <Text style={styles.secondaryText}>Herhaal</Text>
         </Pressable>
         <Pressable
           onPress={onReset}
           disabled={isBusy}
           style={[styles.secondary, isBusy && styles.disabled]}
         >
-          <Text style={styles.secondaryText}>✕ Nieuw gesprek</Text>
+          <CloseIcon size={15} color={theme.textMuted} />
+          <Text style={styles.secondaryText}>Nieuw gesprek</Text>
         </Pressable>
       </View>
 
       <Pressable
-        onPressIn={isBusy ? undefined : onStartTalking}
-        onPressOut={isBusy ? undefined : onStopTalking}
+        onPress={isBusy ? undefined : onToggle}
         disabled={isBusy}
         style={({ pressed }) => [
           styles.mic,
@@ -50,9 +52,11 @@ export default function CallControls({
         ]}
       >
         {isBusy ? (
-          <ActivityIndicator color="#fff" size="large" />
+          <ActivityIndicator color={theme.onAccent} />
+        ) : recording ? (
+          <StopIcon size={26} color={theme.onAccent} />
         ) : (
-          <Text style={styles.micIcon}>{recording ? '●' : '🎙'}</Text>
+          <MicIcon size={28} color={theme.onAccent} strokeWidth={2.2} />
         )}
       </Pressable>
 
@@ -62,29 +66,30 @@ export default function CallControls({
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingTop: 10, paddingBottom: 12, alignItems: 'center' },
-  sideRow: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 16 },
+  wrap: { paddingTop: 8, paddingBottom: 10, alignItems: 'center' },
+  sideRow: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginBottom: 14 },
   secondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
+    borderColor: theme.borderStrong,
   },
-  secondaryText: { color: '#E5E7EB', fontSize: 13, fontWeight: '600' },
+  secondaryText: { color: theme.textMuted, fontSize: 13, fontWeight: '600' },
   disabled: { opacity: 0.4 },
   mic: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#10B981',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: theme.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
   },
-  micPressed: { backgroundColor: '#059669', transform: [{ scale: 0.96 }] },
-  micRecording: { backgroundColor: '#EF4444', transform: [{ scale: 1.06 }] },
-  micBusy: { backgroundColor: '#374151' },
-  micIcon: { fontSize: 36, color: '#fff' },
-  hint: { color: '#9CA3AF', fontSize: 14, fontWeight: '600', marginTop: 12 },
+  micPressed: { backgroundColor: theme.accentDark, transform: [{ scale: 0.96 }] },
+  micRecording: { backgroundColor: theme.accentDark },
+  micBusy: { backgroundColor: theme.textFaint },
+  hint: { color: theme.textMuted, fontSize: 13, fontWeight: '600', marginTop: 10 },
 });
