@@ -157,7 +157,7 @@ export default function ProfileScreen({ profile, voicePrefs, onSave }) {
           />
 
           <Pressable onPress={handleSave} disabled={saving} style={[styles.saveBtn, saving && styles.disabled]}>
-            <Text style={styles.saveText}>{saving ? 'Opslaan' : saved ? 'Opgeslagen' : 'Opslaan'}</Text>
+            <Text style={styles.saveText}>{saving ? 'Opslaan…' : saved ? 'Opgeslagen' : 'Opslaan'}</Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
