@@ -8,7 +8,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 
 const GROQ_BASE = 'https://api.groq.com/openai/v1';
 const LLM_MODEL = Deno.env.get('GROQ_MODEL') ?? 'openai/gpt-oss-120b';
-const REASONING = Deno.env.get('GROQ_REASONING') ?? 'high';
+const REASONING = Deno.env.get('GROQ_REASONING') ?? 'low';
 
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -40,18 +40,26 @@ Deno.serve(async (req) => {
       model: LLM_MODEL,
       messages,
       temperature: 0.3,
-      max_tokens: 4096,
+      max_tokens: 1024,
       response_format: { type: 'json_object' },
     };
     if (LLM_MODEL.includes('gpt-oss')) body.reasoning_effort = REASONING;
 
-    const res = await fetch(`${GROQ_BASE}/chat/completions`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    if (!res.ok) return json({ error: data?.error?.message || `Groq-fout (${res.status})` }, res.status);
+    // Retry on 429 (per-minute rate limit) instead of failing the turn.
+    const payload = JSON.stringify(body);
+    let res: Response | undefined;
+    for (let attempt = 0; attempt <= 2; attempt++) {
+      res = await fetch(`${GROQ_BASE}/chat/completions`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: payload,
+      });
+      if (res.status !== 429 || attempt === 2) break;
+      const wait = Number(res.headers.get('retry-after')) || (attempt + 1) * 4;
+      await new Promise((r) => setTimeout(r, Math.min(wait, 15) * 1000));
+    }
+    const data = await res!.json();
+    if (!res!.ok) return json({ error: data?.error?.message || `Groq-fout (${res!.status})` }, res!.status);
     return json(data, 200);
   } catch (e) {
     return json({ error: (e as Error)?.message ?? String(e) }, 500);
