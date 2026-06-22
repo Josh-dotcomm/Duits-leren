@@ -1,7 +1,9 @@
 // ---------------------------------------------------------------------------
-// Groq API integration (free tier): Whisper STT + Llama chat completion.
+// Groq API integration (free tier): Whisper STT + chat completion.
 // Docs: https://console.groq.com/docs
 // ---------------------------------------------------------------------------
+
+import { GROQ_API_KEY } from '../config/secrets';
 
 const GROQ_BASE = 'https://api.groq.com/openai/v1';
 
@@ -15,15 +17,16 @@ const STT_MODEL = process.env.EXPO_PUBLIC_GROQ_STT_MODEL || 'whisper-large-v3';
 // for lower latency, or 'llama-3.1-8b-instant' for maximum speed).
 const LLM_MODEL = process.env.EXPO_PUBLIC_GROQ_MODEL || 'openai/gpt-oss-120b';
 
-// gpt-oss models accept reasoning_effort ('low' | 'medium' | 'high'); 'medium'
-// balances correction accuracy against call latency.
-const REASONING_EFFORT = process.env.EXPO_PUBLIC_GROQ_REASONING || 'medium';
+// gpt-oss models accept reasoning_effort ('low' | 'medium' | 'high'). 'high'
+// gives the most accurate, self-checked grammar corrections (the feedback loop is
+// the whole point), at the cost of some latency. Lower it via EXPO_PUBLIC_GROQ_REASONING.
+const REASONING_EFFORT = process.env.EXPO_PUBLIC_GROQ_REASONING || 'high';
 
 function getApiKey() {
-  const key = process.env.EXPO_PUBLIC_GROQ_API_KEY;
-  if (!key || key === 'your_groq_api_key_here') {
+  const key = GROQ_API_KEY;
+  if (!key || key === 'PASTE_YOUR_GROQ_KEY_HERE' || key === 'your_groq_api_key_here') {
     throw new Error(
-      'Geen Groq API-sleutel gevonden. Maak een ".env" met EXPO_PUBLIC_GROQ_API_KEY en herstart de server.'
+      'Geen Groq API-sleutel gevonden. Vul GROQ_API_KEY in src/config/secrets.js in, of zet EXPO_PUBLIC_GROQ_API_KEY in .env.'
     );
   }
   return key;
@@ -75,7 +78,8 @@ export async function chatComplete(messages) {
     model: LLM_MODEL,
     messages,
     temperature: 0.3,
-    max_tokens: 2048,
+    // High enough that internal reasoning (gpt-oss) never truncates the JSON answer.
+    max_tokens: 4096,
     // Forces strict JSON output that matches our 3-key contract.
     response_format: { type: 'json_object' },
   };

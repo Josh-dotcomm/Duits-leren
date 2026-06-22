@@ -2,16 +2,18 @@ import 'react-native-url-polyfill/auto';
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config/secrets';
 
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const url = SUPABASE_URL;
+const anonKey = SUPABASE_ANON_KEY;
 
-// Lets the UI show a clear message if the .env values are missing.
+// Credentials are baked into src/config/secrets.js, so this is normally true;
+// kept so the UI can still warn if someone blanks them out.
 export const supabaseConfigured = !!(url && anonKey);
 
 export const supabase = createClient(
-  url || 'https://placeholder.supabase.co',
-  anonKey || 'public-anon-placeholder',
+  url,
+  anonKey,
   {
     auth: {
       storage: AsyncStorage,

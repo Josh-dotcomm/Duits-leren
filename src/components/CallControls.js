@@ -10,15 +10,19 @@ export default function CallControls({
   status,
   isBusy,
   onToggle,
+  onStopPlayback,
   onReplay,
   onReset,
   canReplay,
 }) {
   const recording = status === STATUS.RECORDING;
+  const speaking = status === STATUS.SPEAKING;
+  const processing = isBusy && !speaking; // transcribing or thinking: not interruptible
 
   let hint = 'Tik om te spreken';
   if (recording) hint = 'Tik om te stoppen';
-  else if (isBusy) hint = 'Even geduld…';
+  else if (speaking) hint = 'Tik om te onderbreken';
+  else if (processing) hint = 'Even geduld...';
 
   return (
     <View style={styles.wrap}>
@@ -42,18 +46,19 @@ export default function CallControls({
       </View>
 
       <Pressable
-        onPress={isBusy ? undefined : onToggle}
-        disabled={isBusy}
+        onPress={speaking ? onStopPlayback : processing ? undefined : onToggle}
+        disabled={processing}
         style={({ pressed }) => [
           styles.mic,
+          pressed && !processing && styles.micPressed,
           recording && styles.micRecording,
-          isBusy && styles.micBusy,
-          pressed && !isBusy && styles.micPressed,
+          speaking && styles.micStop,
+          processing && styles.micBusy,
         ]}
       >
-        {isBusy ? (
+        {processing ? (
           <ActivityIndicator color={theme.onAccent} />
-        ) : recording ? (
+        ) : recording || speaking ? (
           <StopIcon size={26} color={theme.onAccent} />
         ) : (
           <MicIcon size={28} color={theme.onAccent} strokeWidth={2.2} />
@@ -90,6 +95,7 @@ const styles = StyleSheet.create({
   },
   micPressed: { backgroundColor: theme.accentDark, transform: [{ scale: 0.96 }] },
   micRecording: { backgroundColor: theme.accentDark },
+  micStop: { backgroundColor: theme.danger },
   micBusy: { backgroundColor: theme.textFaint },
   hint: { color: theme.textMuted, fontSize: 13, fontWeight: '600', marginTop: 10 },
 });

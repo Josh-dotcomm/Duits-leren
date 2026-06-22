@@ -119,6 +119,10 @@ foreground-service config are in `app.json`; for locked-screen audio build a dev
 
 - Model/latency tuning: set `EXPO_PUBLIC_GROQ_MODEL` (e.g. `llama-3.3-70b-versatile` for
   lower latency, `llama-3.1-8b-instant` for max speed) and `EXPO_PUBLIC_GROQ_REASONING`
-  (low/medium/high, gpt-oss only) in `.env`. Default is `openai/gpt-oss-120b` at medium.
+  (low/medium/high, gpt-oss only) in `.env`. Default is `openai/gpt-oss-120b` at high.
+- API keys: baked into `src/config/secrets.js` so the APK works without a `.env`; paste your
+  Groq key there. `EXPO_PUBLIC_*` env vars still override.
+- Dictionary: if the seeded base words do not show, run `supabase/policies.sql` once in the
+  Supabase SQL editor (adds a permissive SELECT so signed-in users read the whole list).
 - No promises: the persona never invents firm prices, stock or delivery on the learner's
   behalf; it pushes the learner to state and defend those themselves.
