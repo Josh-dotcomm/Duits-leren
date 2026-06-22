@@ -1,38 +1,35 @@
 // ---------------------------------------------------------------------------
-// LEARNER PROFILE + CALL-SETUP DEFAULTS
+// DEFAULTS + SETUP SUGGESTIONS
 // ---------------------------------------------------------------------------
-// The learner profile describes WHO is practising (a native Dutch speaker).
-// The call setup (scenario + AI persona) is chosen per call on the Setup screen
-// and injected into the system prompt at runtime — it is no longer hardcoded.
+// Nothing about the user is hardcoded anymore. The profile (name / company /
+// role) is entered on the Profiel tab and persisted; these are only the empty
+// defaults used until the user fills it in.
 // ---------------------------------------------------------------------------
 
-export const learnerProfile = {
-  userName: 'Sonnevelt', // how the coach addresses the learner
-  lastName: 'Sonnevelt', // used in self-introduction examples
-  company: 'Family Chicken',
-  nativeLanguage: 'Nederlands',
-  targetLanguage: 'Duits',
+export const defaultProfile = {
+  name: '',
+  company: '',
+  role: '',
 };
 
-// Values pre-filled on the Setup screen.
+// Pre-filled values on the Setup screen.
 export const defaultCallSetup = {
-  scenario: 'Bellen over een monsterpakket van onze kipproducten.',
-  persona: 'Inkoper bij een Duitse supermarktketen',
+  scenario: 'Bellen over proefpakket',
+  persona: 'Inkoper franchiseorganisatie/groothandel',
 };
 
 // Quick-pick suggestions (tap a chip to fill the field).
 export const scenarioSuggestions = [
-  'Bellen over een monsterpakket',
-  'Koude acquisitie (walk-in)',
-  'Een klacht over een levering oplossen',
-  'Prijsonderhandeling met een inkoper',
-  'Een afspraak inplannen',
+  'Bellen over proefpakket',
+  'Koude acquisitie',
+  'Klacht levering/product',
+  'Prijsonderhandeling',
+  'Afspraak inplannen',
 ];
 
 export const personaSuggestions = [
-  'Supermarktmanager',
-  'Inkoper (Einkäufer)',
-  'Poortwachter / secretaresse',
-  'Chef-kok van een restaurant',
-  'Groothandel-inkoper',
+  'Inkoper franchiseorganisatie/groothandel',
+  'Eigenaar Imbiss',
+  'Chef-kok horecazaak',
+  'Verkoper binnendienst orderverwerking',
 ];

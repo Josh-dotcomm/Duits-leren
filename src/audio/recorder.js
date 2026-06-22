@@ -45,7 +45,3 @@ export async function stopRecording() {
   }
   return recording.getURI();
 }
-
-export function isRecording() {
-  return activeRecording !== null;
-}

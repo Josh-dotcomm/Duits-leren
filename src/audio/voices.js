@@ -1,36 +1,51 @@
 import * as Speech from 'expo-speech';
 
-// We query the device's installed voices once and cache the best identifier for
-// each language, so playback doesn't pay that cost on every utterance.
-let cache = null;
+// Auto-picked best voices (cached after first device query) and the user's
+// manual overrides chosen on the Profiel tab.
+let autoCache = null;
+let overrides = {}; // { nl?: identifier, de?: identifier }
 
-// Returns { nl, de } — voice identifiers, or undefined to fall back to the OS
-// default for that language.
-export async function getPreferredVoices() {
-  if (cache) return cache;
+// Set by App from persisted preferences, and by the Profiel tab when changed.
+export function setVoicePreferences(prefs) {
+  overrides = { ...(prefs || {}) };
+}
 
-  let voices = [];
+export async function listVoices() {
   try {
-    voices = await Speech.getAvailableVoicesAsync();
+    return await Speech.getAvailableVoicesAsync();
   } catch (_) {
-    voices = [];
+    return [];
   }
+}
 
-  cache = {
-    nl: pickBest(voices, 'nl', 'nl-NL'),
-    de: pickBest(voices, 'de', 'de-DE'),
+// All installed voices grouped by the two languages we use.
+export async function getVoicesByLanguage() {
+  const all = await listVoices();
+  return {
+    nl: all.filter((v) => (v.language || '').toLowerCase().startsWith('nl')),
+    de: all.filter((v) => (v.language || '').toLowerCase().startsWith('de')),
   };
-  return cache;
 }
 
-// Forget the cached selection (e.g. if the user installs new voices).
-export function resetVoiceCache() {
-  cache = null;
+// Returns { nl, de } voice identifiers used for playback. A user override wins
+// per language; otherwise we fall back to the auto-selected best voice (or
+// undefined, which lets expo-speech use the OS default for that language).
+export async function getPreferredVoices() {
+  if (!autoCache) {
+    const all = await listVoices();
+    autoCache = {
+      nl: pickBest(all, 'nl', 'nl-NL'),
+      de: pickBest(all, 'de', 'de-DE'),
+    };
+  }
+  return {
+    nl: overrides.nl || autoCache.nl,
+    de: overrides.de || autoCache.de,
+  };
 }
 
-// Score candidates so we prefer (1) enhanced/premium quality and (2) the exact
-// regional locale (nl-NL over nl-BE, de-DE over de-AT), then return the best
-// voice's identifier.
+// Score candidates: prefer (1) enhanced/premium quality and (2) the exact
+// regional locale (nl-NL over nl-BE, de-DE over de-AT). Returns the identifier.
 function pickBest(voices, langPrefix, exactLocale) {
   const candidates = (voices || []).filter((v) =>
     (v.language || '').toLowerCase().startsWith(langPrefix)

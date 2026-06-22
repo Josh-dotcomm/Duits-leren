@@ -1,8 +1,8 @@
-import { learnerProfile } from './businessContext';
+import { defaultProfile } from './businessContext';
 
 // Builds the system prompt with the per-call scenario + AI persona + the user's
-// persistent Knowledge Base injected. The model MUST always answer with a single
-// JSON object with THREE keys:
+// persistent Knowledge Base + their profile injected. The model MUST always
+// answer with a single JSON object with THREE keys:
 //   - feedback_dutch          : explanation in Dutch ONLY (no German words)
 //   - feedback_german_example : the corrected German model phrase (German ONLY)
 //   - reply                   : the persona's German answer
@@ -12,19 +12,32 @@ export function buildSystemPrompt({
   scenario,
   persona,
   knowledgeBaseText = '',
-  learner = learnerProfile,
+  learner = defaultProfile,
 }) {
+  const name = (learner?.name || '').trim();
+  const company = (learner?.company || '').trim();
+  const role = (learner?.role || '').trim();
+
+  const whoLine = name
+    ? `${name}${company ? ` van de firma ${company}` : ''}${role ? `, ${role}` : ''}`
+    : 'de gebruiker (naam nog niet ingevuld)';
+
+  const introExample = name
+    ? `"Mein Name ist ${name}"${company ? ` of "${name}, Firma ${company}"` : ''}`
+    : '"Mein Name ist [achternaam]"';
+
   const kb =
     knowledgeBaseText && knowledgeBaseText.trim()
       ? knowledgeBaseText.trim()
       : "(De gebruiker heeft nog geen kennisbank ingevuld. Vraag dan zelf actief door naar hun bedrijf, werkwijzen en USP's en blijf hen testen.)";
 
   return `You are the language engine behind a hands-free "phone call" app that trains
-${learner.userName} from ${learner.company} in BUSINESS GERMAN for real sales and
-negotiation calls with German customers.
+a native DUTCH speaker in BUSINESS GERMAN for real sales and negotiation calls with
+German customers.
 
-The learner is a native DUTCH speaker learning GERMAN. Their German is captured by
-speech-to-text, so the text you receive may contain transcription (mishearing) errors.
+THE LEARNER (the person practising): ${whoLine}.
+Their German is captured by speech-to-text, so the text you receive may contain
+transcription (mishearing) errors.
 
 === THIS CALL ===
 AI PERSONA (the role YOU play): ${persona}
@@ -71,7 +84,7 @@ WHAT TO CORRECT (explain in feedback_dutch, give the fix in feedback_german_exam
 - Vocabulary: a better, more idiomatic business term.
 - Spelling/STT mishearings: silently interpret the intended German word.
 - German business etiquette (Geschäftskultur):
-    * Never refer to oneself as "Herr/Frau ..."; introduce as "Mein Name ist ${learner.lastName}".
+    * Never refer to oneself as "Herr/Frau ..."; introduce as ${introExample}.
     * Use "von der Firma ..." (NOT "vom ...").
     * Always the formal "Sie"; flag any accidental "du".
     * Prefer polite Konjunktiv II ("Ich hätte ...", "Könnten Sie ...").
@@ -88,9 +101,9 @@ These are the ONLY turns where "reply" may be "":
 - "Begin opnieuw" / "Nieuw gesprek":
     restart the scenario in "reply" (still ending with a question); feedback fields "".
 
-IMPORTANT: You may negotiate hard, but never invent firm ${learner.company} prices,
-stock levels or delivery dates as if the learner promised them — instead push the
-learner to state and defend those numbers themselves.
+IMPORTANT: You may negotiate hard, but never invent firm prices, stock levels or
+delivery dates on the learner's behalf — instead push the learner to state and defend
+those numbers themselves.
 
 STYLE: concise and speakable — every field is converted to speech. Output ONLY the JSON.`;
 }

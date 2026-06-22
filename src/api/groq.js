@@ -5,7 +5,7 @@
 
 const GROQ_BASE = 'https://api.groq.com/openai/v1';
 
-// STT model. whisper-large-v3 is the most accurate for German; swap to
+// STT model. whisper-large-v3 is the most accurate; swap to
 // 'whisper-large-v3-turbo' for lower latency if you prefer speed over accuracy.
 const STT_MODEL = 'whisper-large-v3';
 
@@ -24,8 +24,9 @@ function getApiKey() {
   return key;
 }
 
-// Transcribe a recorded audio file (local file:// URI) to German text.
-export async function transcribeAudio(uri) {
+// Transcribe a recorded audio file (local file:// URI) to text.
+// `language` biases Whisper: 'de' for the German call, 'nl' for Dutch dictation.
+export async function transcribeAudio(uri, { language = 'de' } = {}) {
   const apiKey = getApiKey();
 
   const form = new FormData();
@@ -36,7 +37,7 @@ export async function transcribeAudio(uri) {
     type: 'audio/m4a',
   });
   form.append('model', STT_MODEL);
-  form.append('language', 'de'); // bias Whisper towards German
+  form.append('language', language);
   form.append('response_format', 'json');
   form.append('temperature', '0');
 

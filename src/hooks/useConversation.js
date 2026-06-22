@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { startRecording, stopRecording, isRecording } from '../audio/recorder';
+import { startRecording, stopRecording } from '../audio/recorder';
 import { transcribeAudio, chatComplete } from '../api/groq';
 import { speakSequence, stopSpeaking } from '../audio/speech';
 import { buildSystemPrompt } from '../config/prompts';
-import { learnerProfile } from '../config/businessContext';
+import { defaultProfile } from '../config/businessContext';
 import {
   appendUserTurn,
   appendAssistantTurn,
@@ -22,14 +22,13 @@ export const STATUS = {
 
 let turnCounter = 0;
 
-// `setup` = { scenario, persona, knowledgeBaseText } chosen on the Setup screen.
+// `setup` = { scenario, persona, knowledgeBaseText, profile } from the app.
 export function useConversation(setup) {
   const [status, setStatus] = useState(STATUS.IDLE);
   const [turns, setTurns] = useState([]); // [{ id, you, feedbackDutch, feedbackGermanExample, reply, done }]
   const [error, setError] = useState(null);
 
   const historyRef = useRef([]);
-  const releasedRef = useRef(false); // push-to-talk: did the user release before recording started?
   const processingRef = useRef(false); // ensures a recording is processed exactly once
 
   const systemPrompt = useMemo(
@@ -38,9 +37,9 @@ export function useConversation(setup) {
         scenario: setup.scenario,
         persona: setup.persona,
         knowledgeBaseText: setup.knowledgeBaseText,
-        learner: learnerProfile,
+        learner: setup.profile || defaultProfile,
       }),
-    [setup.scenario, setup.persona, setup.knowledgeBaseText]
+    [setup.scenario, setup.persona, setup.knowledgeBaseText, setup.profile]
   );
 
   // stop recording -> transcribe -> LLM -> speak. Runs at most once per turn.
@@ -55,8 +54,8 @@ export function useConversation(setup) {
         return;
       }
 
-      // 1) Speech-to-text (Groq Whisper).
-      const youText = await transcribeAudio(uri);
+      // 1) Speech-to-text (Groq Whisper, German).
+      const youText = await transcribeAudio(uri, { language: 'de' });
       if (!youText) {
         setStatus(STATUS.IDLE);
         return;
@@ -74,9 +73,7 @@ export function useConversation(setup) {
       historyRef.current = appendUserTurn(historyRef.current, youText);
       const messages = buildMessages(systemPrompt, historyRef.current);
       const res = await chatComplete(messages);
-      const feedbackDutch = res.feedback_dutch;
-      const feedbackGermanExample = res.feedback_german_example;
-      const reply = res.reply;
+      const { feedback_dutch: feedbackDutch, feedback_german_example: feedbackGermanExample, reply } = res;
 
       historyRef.current = appendAssistantTurn(historyRef.current, reply);
       setTurns((prev) =>
@@ -99,32 +96,29 @@ export function useConversation(setup) {
     }
   }, [systemPrompt]);
 
-  // Push-to-talk: press-in -> start recording.
-  const startTalking = useCallback(async () => {
+  // Begin a recording (tap to start).
+  const startRec = useCallback(async () => {
     try {
       setError(null);
       stopSpeaking();
-      releasedRef.current = false;
       setStatus(STATUS.RECORDING);
       await startRecording();
-      // If the user already released while the recorder was starting, send now.
-      if (releasedRef.current) {
-        await processRecording();
-      }
     } catch (e) {
       setError(e.message);
       setStatus(STATUS.ERROR);
     }
-  }, [processRecording]);
+  }, []);
 
-  // Push-to-talk: press-out (release) -> stop and auto-send.
-  const stopTalking = useCallback(() => {
-    releasedRef.current = true;
-    // Only send if recording actually started; otherwise startTalking handles it.
-    if (isRecording()) {
+  // Single mic button: tap once to start recording, tap again to stop & send.
+  // (No press-and-hold.)
+  const toggleRecording = useCallback(() => {
+    if (status === STATUS.RECORDING) {
       processRecording();
+    } else if (status === STATUS.IDLE || status === STATUS.ERROR) {
+      startRec();
     }
-  }, [processRecording]);
+    // While transcribing/thinking/speaking, taps are ignored (busy).
+  }, [status, processRecording, startRec]);
 
   // Replay a previous turn's audio (NL feedback -> DE example -> DE reply).
   const replay = useCallback((turn) => {
@@ -150,5 +144,5 @@ export function useConversation(setup) {
     status === STATUS.THINKING ||
     status === STATUS.SPEAKING;
 
-  return { status, turns, error, isBusy, startTalking, stopTalking, replay, reset };
+  return { status, turns, error, isBusy, toggleRecording, replay, reset };
 }
