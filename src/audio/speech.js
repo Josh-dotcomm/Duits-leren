@@ -18,6 +18,11 @@ function speakAsync(text, options = {}) {
   });
 }
 
+// Lets stopSpeaking() cancel an in-flight sequence: each speakSequence claims the
+// current token; stopSpeaking() bumps it so the running sequence sees a mismatch
+// and stops before starting the next part (instead of rolling on to the reply).
+let activeToken = 0;
+
 // Plays the three response parts sequentially, switching the TTS voice/engine
 // per language so German is never read by a Dutch voice (or vice versa):
 //   1. feedback_dutch          -> nl-NL voice
@@ -29,42 +34,38 @@ export async function speakSequence(
   { onStage } = {}
 ) {
   Speech.stop();
+  const token = ++activeToken;
   await setModeForPlayback();
 
   // Enhanced/high-quality device voices when available (falls back to default).
   const voices = await getPreferredVoices();
 
-  if (feedbackDutch && feedbackDutch.trim()) {
-    onStage?.('feedback_dutch');
-    await speakAsync(feedbackDutch, {
-      language: 'nl-NL',
-      voice: voices.nl,
-      rate: 1.0,
-      pitch: 1.0,
-    });
-  }
+  const speakPart = async (text, options, stage) => {
+    if (token !== activeToken) return; // cancelled by stopSpeaking()
+    if (!text || !text.trim()) return;
+    onStage?.(stage);
+    await speakAsync(text, options);
+  };
 
-  if (feedbackGermanExample && feedbackGermanExample.trim()) {
-    onStage?.('feedback_german_example');
-    await speakAsync(feedbackGermanExample, {
-      language: 'de-DE',
-      voice: voices.de,
-      rate: 0.95,
-      pitch: 1.0,
-    });
-  }
-
-  if (reply && reply.trim()) {
-    onStage?.('reply');
-    await speakAsync(reply, {
-      language: 'de-DE',
-      voice: voices.de,
-      rate: 0.95,
-      pitch: 1.0,
-    });
-  }
+  await speakPart(
+    feedbackDutch,
+    { language: 'nl-NL', voice: voices.nl, rate: 1.0, pitch: 1.0 },
+    'feedback_dutch'
+  );
+  await speakPart(
+    feedbackGermanExample,
+    { language: 'de-DE', voice: voices.de, rate: 0.95, pitch: 1.0 },
+    'feedback_german_example'
+  );
+  await speakPart(
+    reply,
+    { language: 'de-DE', voice: voices.de, rate: 0.95, pitch: 1.0 },
+    'reply'
+  );
 }
 
+// Stop the current utterance and cancel any remaining parts of the sequence.
 export function stopSpeaking() {
+  activeToken++;
   Speech.stop();
 }

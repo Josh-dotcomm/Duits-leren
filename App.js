@@ -16,6 +16,7 @@ import { loadProfile, saveProfile, loadVoicePrefs, saveVoicePrefs } from './src/
 import { setVoicePreferences } from './src/audio/voices';
 import { AuthProvider, useAuth } from './src/hooks/useAuth';
 import { fetchDictionary } from './src/api/dictionary';
+import { supabaseConfigured } from './src/api/supabase';
 
 // The signed-in app: tabs + the dictionary modal.
 function AuthedApp() {
@@ -28,14 +29,16 @@ function AuthedApp() {
   const [loaded, setLoaded] = useState(false);
   const [dictionary, setDictionary] = useState([]);
   const [dictLoading, setDictLoading] = useState(true);
+  const [dictError, setDictError] = useState('');
   const [dictVisible, setDictVisible] = useState(false);
 
   const refreshDictionary = async () => {
     try {
       setDictLoading(true);
+      setDictError('');
       setDictionary(await fetchDictionary());
-    } catch (_) {
-      // keep whatever we have; offline or transient error
+    } catch (e) {
+      setDictError(e?.message || 'Het woordenboek kon niet geladen worden.');
     } finally {
       setDictLoading(false);
     }
@@ -92,6 +95,10 @@ function AuthedApp() {
           <LearnScreen
             dictionary={dictionary}
             userId={user?.id}
+            loading={dictLoading}
+            error={dictError}
+            configured={supabaseConfigured}
+            onRetry={refreshDictionary}
             onOpenDictionary={() => setDictVisible(true)}
           />
         </View>
@@ -118,6 +125,7 @@ function AuthedApp() {
         onClose={() => setDictVisible(false)}
         entries={dictionary}
         loading={dictLoading}
+        loadError={dictError}
         userId={user?.id}
         onChanged={refreshDictionary}
       />

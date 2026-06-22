@@ -140,10 +140,16 @@ export function useConversation(setup) {
     setStatus(STATUS.IDLE);
   }, []);
 
+  // Interrupt playback (the red stop button shown while the AI is speaking).
+  const stopPlayback = useCallback(() => {
+    stopSpeaking();
+    setStatus(STATUS.IDLE);
+  }, []);
+
   const isBusy =
     status === STATUS.TRANSCRIBING ||
     status === STATUS.THINKING ||
     status === STATUS.SPEAKING;
 
-  return { status, turns, error, isBusy, toggleRecording, replay, reset };
+  return { status, turns, error, isBusy, toggleRecording, replay, reset, stopPlayback };
 }

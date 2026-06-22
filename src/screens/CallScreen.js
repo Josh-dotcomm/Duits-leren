@@ -20,7 +20,7 @@ import CallControls from '../components/CallControls';
 // `setup` = { scenario, persona, knowledgeBaseText, profile }; `onExit` returns
 // to the Setup screen.
 export default function CallScreen({ setup, onExit }) {
-  const { status, turns, error, isBusy, toggleRecording, replay, reset } =
+  const { status, turns, error, isBusy, toggleRecording, replay, reset, stopPlayback } =
     useConversation(setup);
   const scrollRef = useRef(null);
   const profile = setup.profile || {};
@@ -102,6 +102,7 @@ export default function CallScreen({ setup, onExit }) {
           status={status}
           isBusy={isBusy}
           onToggle={toggleRecording}
+          onStopPlayback={stopPlayback}
           onReplay={() => replay(lastTurn)}
           onReset={reset}
           canReplay={!!lastTurn && lastTurn.done && status !== STATUS.RECORDING}
