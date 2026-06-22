@@ -72,12 +72,30 @@ Settings, System, Languages, Text-to-speech output).
 ```bash
 npm install
 npx expo install --fix            # align native module versions with the Expo SDK
-cp .env.example .env              # set EXPO_PUBLIC_GROQ_API_KEY=gsk_...
+cp .env.example .env              # optional: EXPO_PUBLIC_GROQ_API_KEY for direct local mode
 npx expo start                    # open in Expo Go; grant microphone permission
 ```
 
-Note: `EXPO_PUBLIC_` vars are bundled into the app and are not secret. Fine for
-internal/testing use; proxy through a backend for a public production app.
+## Keeping the Groq key server-side
+
+Anything shipped inside the app can be extracted from the bundle, so the Groq key must not
+live in the client. Two thin Supabase Edge Functions (`supabase/functions/chat` and
+`supabase/functions/transcribe`) proxy Groq and hold the key server-side; the app calls them
+with the signed-in user's token, so only your users can use it.
+
+One-time deploy:
+
+```bash
+npm i -g supabase
+supabase login
+supabase link --project-ref hxnsecgtgpjflkhijidx
+supabase secrets set GROQ_API_KEY=gsk_your_real_key
+supabase functions deploy chat
+supabase functions deploy transcribe
+```
+
+For local development you can instead set `EXPO_PUBLIC_GROQ_API_KEY` in `.env` to call Groq
+directly; that key stays on your machine and is never shipped in the build.
 
 ## Project structure
 
@@ -120,8 +138,9 @@ foreground-service config are in `app.json`; for locked-screen audio build a dev
 - Model/latency tuning: set `EXPO_PUBLIC_GROQ_MODEL` (e.g. `llama-3.3-70b-versatile` for
   lower latency, `llama-3.1-8b-instant` for max speed) and `EXPO_PUBLIC_GROQ_REASONING`
   (low/medium/high, gpt-oss only) in `.env`. Default is `openai/gpt-oss-120b` at high.
-- API keys: baked into `src/config/secrets.js` so the APK works without a `.env`; paste your
-  Groq key there. `EXPO_PUBLIC_*` env vars still override.
+- API keys: Supabase URL + anon key are baked into `src/config/secrets.js` (safe to ship).
+  The Groq key is NOT shipped; in production the app calls Supabase Edge Functions that hold
+  it server-side. See "Keeping the Groq key server-side".
 - Dictionary: if the seeded base words do not show, run `supabase/policies.sql` once in the
   Supabase SQL editor (adds a permissive SELECT so signed-in users read the whole list).
 - No promises: the persona never invents firm prices, stock or delivery on the learner's
