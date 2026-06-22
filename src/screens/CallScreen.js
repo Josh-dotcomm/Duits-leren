@@ -20,8 +20,19 @@ import CallControls from '../components/CallControls';
 // `setup` = { scenario, persona, knowledgeBaseText, profile }; `onExit` returns
 // to the Setup screen.
 export default function CallScreen({ setup, onExit }) {
-  const { status, turns, error, isBusy, toggleRecording, replay, reset, stopPlayback } =
-    useConversation(setup);
+  const {
+    status,
+    turns,
+    error,
+    isBusy,
+    handsFree,
+    handsFreeActive,
+    toggleRecording,
+    stopPlayback,
+    replay,
+    reset,
+    setHandsFree,
+  } = useConversation(setup);
   const scrollRef = useRef(null);
   const profile = setup.profile || {};
 
@@ -100,9 +111,11 @@ export default function CallScreen({ setup, onExit }) {
       <View style={styles.controls}>
         <CallControls
           status={status}
-          isBusy={isBusy}
+          handsFree={handsFree}
+          handsFreeActive={handsFreeActive}
           onToggle={toggleRecording}
           onStopPlayback={stopPlayback}
+          onToggleHandsFree={() => setHandsFree(!handsFree)}
           onReplay={() => replay(lastTurn)}
           onReset={reset}
           canReplay={!!lastTurn && lastTurn.done && status !== STATUS.RECORDING}
