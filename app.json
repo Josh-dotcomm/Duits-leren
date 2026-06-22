@@ -17,6 +17,7 @@
     },
     "android": {
       "package": "nl.hillco.businessgermancoach",
+      "versionCode": 1,
       "permissions": [
         "RECORD_AUDIO",
         "FOREGROUND_SERVICE",
