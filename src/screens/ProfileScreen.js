@@ -15,6 +15,7 @@ import * as Speech from 'expo-speech';
 import { theme } from '../config/theme';
 import { getVoicesByLanguage } from '../audio/voices';
 import { CheckIcon, PlayIcon } from '../components/icons';
+import { useAuth } from '../hooks/useAuth';
 
 const SAMPLES = {
   nl: { language: 'nl-NL', text: 'Hallo, dit is een voorbeeld van deze stem.' },
@@ -75,6 +76,7 @@ function VoiceSection({ title, lang, voices, selectedId, onChange }) {
 // Profiel tab: name / company / role (de-hardcoded, persisted) plus the on-device
 // TTS voice picker. `onSave(profile, voicePrefs)` lifts both up to the app.
 export default function ProfileScreen({ profile, voicePrefs, onSave }) {
+  const { signOut } = useAuth();
   const [name, setName] = useState(profile.name || '');
   const [company, setCompany] = useState(profile.company || '');
   const [role, setRole] = useState(profile.role || '');
@@ -159,6 +161,10 @@ export default function ProfileScreen({ profile, voicePrefs, onSave }) {
           <Pressable onPress={handleSave} disabled={saving} style={[styles.saveBtn, saving && styles.disabled]}>
             <Text style={styles.saveText}>{saving ? 'Opslaan…' : saved ? 'Opgeslagen' : 'Opslaan'}</Text>
           </Pressable>
+
+          <Pressable onPress={signOut} style={styles.logoutBtn}>
+            <Text style={styles.logoutText}>Uitloggen</Text>
+          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -217,4 +223,6 @@ const styles = StyleSheet.create({
   },
   disabled: { opacity: 0.5 },
   saveText: { color: theme.onAccent, fontSize: 17, fontWeight: '800' },
+  logoutBtn: { marginTop: 14, alignItems: 'center', paddingVertical: 12 },
+  logoutText: { color: theme.danger, fontSize: 15, fontWeight: '700' },
 });

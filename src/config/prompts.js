@@ -1,8 +1,8 @@
 import { defaultProfile } from './businessContext';
 
 // Builds the system prompt with the per-call scenario, AI persona, the user's
-// persistent Knowledge Base and their profile injected. The model MUST always
-// answer with a single JSON object with THREE keys:
+// persistent Knowledge Base, their profile and the branch dictionary injected.
+// The model MUST always answer with a single JSON object with THREE keys:
 //   feedback_dutch          : explanation in Dutch ONLY (no German words)
 //   feedback_german_example : the corrected German model phrase (German ONLY)
 //   reply                   : the persona's German answer
@@ -12,6 +12,7 @@ export function buildSystemPrompt({
   persona,
   knowledgeBaseText = '',
   learner = defaultProfile,
+  dictionary = [],
 }) {
   const name = (learner?.name || '').trim();
   const company = (learner?.company || '').trim();
@@ -30,6 +31,17 @@ export function buildSystemPrompt({
       ? knowledgeBaseText.trim()
       : "(De gebruiker heeft nog geen kennisbank ingevuld. Vraag dan zelf actief door naar hun bedrijf, werkwijzen en USP's en blijf hen testen.)";
 
+  const dictWords = (dictionary || []).filter((e) => e.type === 'word');
+  const dictSentences = (dictionary || []).filter((e) => e.type === 'sentence');
+  const fmtWords = dictWords
+    .map((e) => `- ${e.dutch} = ${e.article ? e.article + ' ' : ''}${e.german}`)
+    .join('\n');
+  const fmtSentences = dictSentences.map((e) => `- ${e.dutch} = ${e.german}`).join('\n');
+  const woordenboek =
+    dictWords.length || dictSentences.length
+      ? `\n\nWOORDENBOEK (branchewoorden en -zinnen; gebruik deze en stuur de leerling ernaartoe waar passend):\nWoorden:\n${fmtWords}\nZinnen:\n${fmtSentences}`
+      : '';
+
   return `You are the language engine behind a hands-free "phone call" app that trains
 a native DUTCH speaker in BUSINESS GERMAN for B2B sales in the German hospitality and
 food-service sector (Gastronomie, Imbiss, Restaurant, Grosshandel, horeca).
@@ -43,7 +55,7 @@ AI PERSONA (the role YOU play): ${persona}
 SCENARIO / GOAL OF THE CALL: ${scenario}
 
 KNOWLEDGE BASE (the learner's own company info, working methods and USPs):
-${kb}
+${kb}${woordenboek}
 
 You play TWO roles and keep them strictly separate:
 1. THE PERSONA "${persona}". You ARE the buyer/persona; the learner is selling to you.

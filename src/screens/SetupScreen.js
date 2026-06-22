@@ -17,6 +17,7 @@ import {
   personaSuggestions,
 } from '../config/businessContext';
 import { theme } from '../config/theme';
+import { BookIcon } from '../components/icons';
 
 function Chip({ text, active, onPress }) {
   return (
@@ -27,7 +28,8 @@ function Chip({ text, active, onPress }) {
 }
 
 // Pre-call setup: choose the scenario (goal of the call) and the AI persona.
-export default function SetupScreen({ onStart, hasKnowledgeBase, onOpenKnowledgeBase }) {
+// The book icon opens the custom dictionary (woordenboek).
+export default function SetupScreen({ onStart, hasKnowledgeBase, onOpenKnowledgeBase, onOpenDictionary }) {
   const [scenario, setScenario] = useState(defaultCallSetup.scenario);
   const [persona, setPersona] = useState(defaultCallSetup.persona);
 
@@ -43,7 +45,12 @@ export default function SetupScreen({ onStart, hasKnowledgeBase, onOpenKnowledge
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.title}>Nieuw gesprek</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>Nieuw gesprek</Text>
+            <Pressable onPress={onOpenDictionary} hitSlop={8} style={styles.bookBtn}>
+              <BookIcon size={22} color={theme.accent} />
+            </Pressable>
+          </View>
 
           <Text style={styles.label}>Scenario</Text>
           <TextInput
@@ -101,7 +108,24 @@ const styles = StyleSheet.create({
   },
   flex: { flex: 1 },
   content: { padding: 24, paddingBottom: 40 },
-  title: { color: theme.text, fontSize: 26, fontWeight: '800', marginTop: 12, marginBottom: 24 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    marginBottom: 24,
+  },
+  title: { color: theme.text, fontSize: 26, fontWeight: '800' },
+  bookBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.border,
+    backgroundColor: theme.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   label: { color: theme.text, fontSize: 14, fontWeight: '700', marginBottom: 8 },
   labelSpaced: { marginTop: 24 },
   input: {

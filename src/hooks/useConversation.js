@@ -22,7 +22,7 @@ export const STATUS = {
 
 let turnCounter = 0;
 
-// `setup` = { scenario, persona, knowledgeBaseText, profile } from the app.
+// `setup` = { scenario, persona, knowledgeBaseText, profile, dictionary } from the app.
 export function useConversation(setup) {
   const [status, setStatus] = useState(STATUS.IDLE);
   const [turns, setTurns] = useState([]); // [{ id, you, feedbackDutch, feedbackGermanExample, reply, done }]
@@ -38,8 +38,9 @@ export function useConversation(setup) {
         persona: setup.persona,
         knowledgeBaseText: setup.knowledgeBaseText,
         learner: setup.profile || defaultProfile,
+        dictionary: setup.dictionary || [],
       }),
-    [setup.scenario, setup.persona, setup.knowledgeBaseText, setup.profile]
+    [setup.scenario, setup.persona, setup.knowledgeBaseText, setup.profile, setup.dictionary]
   );
 
   // stop recording -> transcribe -> LLM -> speak. Runs at most once per turn.
