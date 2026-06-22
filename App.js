@@ -7,6 +7,7 @@ import KnowledgeBaseScreen from './src/screens/KnowledgeBaseScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import DictionaryScreen from './src/screens/DictionaryScreen';
+import LearnScreen from './src/screens/LearnScreen';
 import TabBar from './src/components/TabBar';
 import { theme } from './src/config/theme';
 import { defaultProfile } from './src/config/businessContext';
@@ -19,7 +20,7 @@ import { fetchDictionary } from './src/api/dictionary';
 // The signed-in app: tabs + the dictionary modal.
 function AuthedApp() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('call'); // 'call' | 'kb' | 'profile'
+  const [activeTab, setActiveTab] = useState('call'); // 'call' | 'learn' | 'kb' | 'profile'
   const [setup, setSetup] = useState(null);
   const [knowledgeBaseText, setKnowledgeBaseText] = useState('');
   const [profile, setProfile] = useState(defaultProfile);
@@ -85,6 +86,14 @@ function AuthedApp() {
               onOpenDictionary={() => setDictVisible(true)}
             />
           )}
+        </View>
+
+        <View style={[styles.fill, activeTab !== 'learn' && styles.hidden]}>
+          <LearnScreen
+            dictionary={dictionary}
+            userId={user?.id}
+            onOpenDictionary={() => setDictVisible(true)}
+          />
         </View>
 
         <View style={[styles.fill, activeTab !== 'kb' && styles.hidden]}>

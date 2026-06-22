@@ -1,16 +1,16 @@
 import React from 'react';
 import { View, Text, Pressable, Platform, StyleSheet } from 'react-native';
 import { theme } from '../config/theme';
-import { PhoneIcon, BookIcon, UserIcon } from './icons';
+import { PhoneIcon, LayersIcon, BookIcon, UserIcon } from './icons';
 
 const TABS = [
   { key: 'call', label: 'Gesprek', Icon: PhoneIcon },
+  { key: 'learn', label: 'Leren', Icon: LayersIcon },
   { key: 'kb', label: 'Kennisbank', Icon: BookIcon },
   { key: 'profile', label: 'Profiel', Icon: UserIcon },
 ];
 
-// Persistent bottom tab bar: switch between the call flow, the knowledge base
-// and the profile.
+// Persistent bottom tab bar.
 export default function TabBar({ activeTab, onChange }) {
   return (
     <View style={styles.bar}>

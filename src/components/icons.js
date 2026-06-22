@@ -111,6 +111,16 @@ export function TrashIcon({ size = 24, color = '#191919', strokeWidth = 2 }) {
   );
 }
 
+export function LayersIcon({ size = 24, color = '#191919', strokeWidth = 2 }) {
+  return (
+    <Svg {...base(size)} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M12 2L2 7l10 5 10-5-10-5z" />
+      <Path d="M2 17l10 5 10-5" />
+      <Path d="M2 12l10 5 10-5" />
+    </Svg>
+  );
+}
+
 export function SlidersIcon({ size = 24, color = '#191919', strokeWidth = 2 }) {
   return (
     <Svg {...base(size)} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
