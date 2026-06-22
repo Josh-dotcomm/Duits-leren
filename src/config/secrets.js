@@ -1,18 +1,18 @@
 // ---------------------------------------------------------------------------
-// Hardcoded API config so the built APK works out of the box, without a .env
-// on the device. EXPO_PUBLIC_* env vars still OVERRIDE these when present
-// (handy for local development or rotating a key without editing code).
+// Client API config.
 //
-// Supabase URL + publishable (anon) key are safe to ship inside a client app:
-// access is guarded by row-level security on the server, not by hiding the key.
+// Supabase URL + publishable (anon) key are SAFE to ship in a client app: access
+// is guarded by row-level security on the server, not by hiding the key. They are
+// hardcoded here so the app and the APK work without a .env.
 //
-// The Groq key is inlined into the JS bundle either way, so it is extractable
-// from the APK. Paste your real key in GROQ_API_KEY below to bake it into the
-// build; keep this repository private once you do.
+// The Groq key is intentionally NOT hardcoded: anything shipped in the app can be
+// extracted from the bundle. In production the Groq key lives server-side in the
+// Supabase Edge Functions ('chat' and 'transcribe'); the app calls those instead.
+// For quick local development you may set EXPO_PUBLIC_GROQ_API_KEY in a local .env
+// (gitignored, never shipped) to call Groq directly.
 // ---------------------------------------------------------------------------
 
-export const GROQ_API_KEY =
-  process.env.EXPO_PUBLIC_GROQ_API_KEY || 'PASTE_YOUR_GROQ_KEY_HERE';
+export const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY || '';
 
 export const SUPABASE_URL =
   process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://hxnsecgtgpjflkhijidx.supabase.co';
