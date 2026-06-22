@@ -63,7 +63,7 @@ Settings, System, Languages, Text-to-speech output).
 - `react-native-svg` icons + a light, Anthropic-inspired theme (`src/config/theme.js`)
 - Local storage: `@react-native-async-storage/async-storage`
 - STT: Groq Whisper (`whisper-large-v3`)
-- LLM: Groq Llama (`llama-3.3-70b-versatile`)
+- LLM: Groq (`openai/gpt-oss-120b` by default; set `EXPO_PUBLIC_GROQ_MODEL` to change)
 - TTS: `expo-speech` (native on-device voices)
 - Audio: `expo-av`
 
@@ -117,7 +117,8 @@ foreground-service config are in `app.json`; for locked-screen audio build a dev
 
 ## Notes
 
-- Model/latency tuning: in `src/api/groq.js`, swap `LLM_MODEL` to `llama-3.1-8b-instant`
-  or `STT_MODEL` to `whisper-large-v3-turbo` for lower latency.
+- Model/latency tuning: set `EXPO_PUBLIC_GROQ_MODEL` (e.g. `llama-3.3-70b-versatile` for
+  lower latency, `llama-3.1-8b-instant` for max speed) and `EXPO_PUBLIC_GROQ_REASONING`
+  (low/medium/high, gpt-oss only) in `.env`. Default is `openai/gpt-oss-120b` at medium.
 - No promises: the persona never invents firm prices, stock or delivery on the learner's
   behalf; it pushes the learner to state and defend those themselves.

@@ -6,13 +6,18 @@
 const GROQ_BASE = 'https://api.groq.com/openai/v1';
 
 // STT model. whisper-large-v3 is the most accurate; swap to
-// 'whisper-large-v3-turbo' for lower latency if you prefer speed over accuracy.
-const STT_MODEL = 'whisper-large-v3';
+// 'whisper-large-v3-turbo' for lower latency. Override with EXPO_PUBLIC_GROQ_STT_MODEL.
+const STT_MODEL = process.env.EXPO_PUBLIC_GROQ_STT_MODEL || 'whisper-large-v3';
 
-// LLM. 70b-versatile gives the best grammar/culture corrections and is still
-// very fast on Groq. For maximum speed (at some quality cost) use
-// 'llama-3.1-8b-instant'.
-const LLM_MODEL = 'llama-3.3-70b-versatile';
+// LLM. openai/gpt-oss-120b reasons internally before it answers, which makes it
+// markedly better at catching and self-correcting German grammar than the older
+// Llama models. Override with EXPO_PUBLIC_GROQ_MODEL (e.g. 'llama-3.3-70b-versatile'
+// for lower latency, or 'llama-3.1-8b-instant' for maximum speed).
+const LLM_MODEL = process.env.EXPO_PUBLIC_GROQ_MODEL || 'openai/gpt-oss-120b';
+
+// gpt-oss models accept reasoning_effort ('low' | 'medium' | 'high'); 'medium'
+// balances correction accuracy against call latency.
+const REASONING_EFFORT = process.env.EXPO_PUBLIC_GROQ_REASONING || 'medium';
 
 function getApiKey() {
   const key = process.env.EXPO_PUBLIC_GROQ_API_KEY;
@@ -64,20 +69,27 @@ export async function transcribeAudio(uri, { language = 'de' } = {}) {
 export async function chatComplete(messages) {
   const apiKey = getApiKey();
 
+  // Reasoning models (gpt-oss) spend completion tokens on internal reasoning, so
+  // give the response generous headroom and pass reasoning_effort for those models.
+  const body = {
+    model: LLM_MODEL,
+    messages,
+    temperature: 0.3,
+    max_tokens: 2048,
+    // Forces strict JSON output that matches our 3-key contract.
+    response_format: { type: 'json_object' },
+  };
+  if (LLM_MODEL.includes('gpt-oss')) {
+    body.reasoning_effort = REASONING_EFFORT;
+  }
+
   const res = await fetch(`${GROQ_BASE}/chat/completions`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      model: LLM_MODEL,
-      messages,
-      temperature: 0.3,
-      max_tokens: 700,
-      // Forces strict JSON output that matches our 3-key contract.
-      response_format: { type: 'json_object' },
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {

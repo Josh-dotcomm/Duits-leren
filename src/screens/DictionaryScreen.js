@@ -20,7 +20,7 @@ const ARTICLES = ['', 'der', 'die', 'das'];
 
 // The custom branch dictionary. Shows the shared base list plus team additions,
 // lets you add new words/sentences, and delete your own additions.
-export default function DictionaryScreen({ visible, onClose, entries, loading, userId, onChanged }) {
+export default function DictionaryScreen({ visible, onClose, entries, loading, loadError, userId, onChanged }) {
   const [tab, setTab] = useState('word'); // 'word' | 'sentence'
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
@@ -195,6 +195,8 @@ export default function DictionaryScreen({ visible, onClose, entries, loading, u
           </View>
         ) : null}
 
+        {loadError ? <Text style={styles.loadError}>Laden mislukt: {loadError}</Text> : null}
+
         {loading ? (
           <ActivityIndicator color={theme.accent} style={{ marginTop: 24 }} />
         ) : (
@@ -325,4 +327,5 @@ const styles = StyleSheet.create({
   cat: { color: theme.textFaint, fontSize: 11, marginLeft: 8 },
   del: { padding: 6, marginLeft: 6 },
   empty: { color: theme.textFaint, fontSize: 14, textAlign: 'center', marginTop: 24 },
+  loadError: { color: theme.danger, fontSize: 13, paddingHorizontal: 20, paddingBottom: 8, lineHeight: 19 },
 });

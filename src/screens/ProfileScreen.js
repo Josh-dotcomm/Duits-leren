@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import * as Speech from 'expo-speech';
 import { theme } from '../config/theme';
-import { getVoicesByLanguage } from '../audio/voices';
+import { getVoicesByLanguage, setVoicePreferences } from '../audio/voices';
 import { CheckIcon, PlayIcon } from '../components/icons';
 import { useAuth } from '../hooks/useAuth';
 
@@ -99,7 +99,9 @@ export default function ProfileScreen({ profile, voicePrefs, onSave }) {
   };
 
   const setVoice = (lang, id) => {
-    setPrefs((p) => ({ ...p, [lang]: id }));
+    const next = { ...prefs, [lang]: id };
+    setPrefs(next);
+    setVoicePreferences(next); // apply right away so the next playback uses this voice
     touch();
   };
 

@@ -292,7 +292,14 @@ function Shadowing({ sentences, onBack }) {
 }
 
 // ---- Hub ----
-export default function LearnScreen({ dictionary, onOpenDictionary }) {
+export default function LearnScreen({
+  dictionary,
+  onOpenDictionary,
+  loading,
+  error,
+  configured = true,
+  onRetry,
+}) {
   const [mode, setMode] = useState('hub');
   const [knownCount, setKnownCount] = useState(null);
 
@@ -315,11 +322,32 @@ export default function LearnScreen({ dictionary, onOpenDictionary }) {
   return wrap(
     <ScrollView contentContainerStyle={styles.content}>
       <Text style={styles.title}>Leren</Text>
-      <Text style={styles.lead}>
-        {empty
-          ? 'Het woordenboek laadt of is leeg.'
-          : `${dictionary.length} items in het woordenboek${knownCount != null ? `, ${knownCount} beheerst` : ''}.`}
-      </Text>
+
+      {!configured ? (
+        <View style={styles.banner}>
+          <Text style={styles.bannerText}>
+            Supabase is niet geconfigureerd. Zet EXPO_PUBLIC_SUPABASE_URL en
+            EXPO_PUBLIC_SUPABASE_ANON_KEY in .env en herstart met: npx expo start -c
+          </Text>
+        </View>
+      ) : error ? (
+        <View style={styles.banner}>
+          <Text style={styles.bannerText}>Woordenboek laden mislukt: {error}</Text>
+          {onRetry ? (
+            <Pressable onPress={onRetry} style={styles.retry}>
+              <Text style={styles.retryText}>Opnieuw proberen</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : (
+        <Text style={styles.lead}>
+          {empty
+            ? loading
+              ? 'Woordenboek laden...'
+              : 'Het woordenboek is leeg.'
+            : `${dictionary.length} items in het woordenboek${knownCount != null ? `, ${knownCount} beheerst` : ''}.`}
+        </Text>
+      )}
 
       <HubCard title="Flashcards" sub="Woorden en zinnen, beide kanten op" disabled={empty} onPress={() => setMode('flash')} />
       <HubCard title="Invuloefening" sub="Lidwoord en woordkeuze" disabled={words.length === 0} onPress={() => setMode('fill')} />
@@ -355,6 +383,18 @@ const styles = StyleSheet.create({
   content: { padding: 24 },
   title: { color: theme.text, fontSize: 26, fontWeight: '800', marginTop: 12 },
   lead: { color: theme.textMuted, fontSize: 14, marginTop: 4, marginBottom: 20 },
+  banner: {
+    backgroundColor: theme.dangerSoft,
+    borderColor: 'rgba(178,58,46,0.4)',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  bannerText: { color: theme.danger, fontSize: 13, lineHeight: 19 },
+  retry: { marginTop: 10, alignSelf: 'flex-start' },
+  retryText: { color: theme.accentDark, fontSize: 14, fontWeight: '700' },
   hubCard: {
     backgroundColor: theme.surface,
     borderColor: theme.border,
