@@ -19,7 +19,11 @@ const GROQ_BASE = 'https://api.groq.com/openai/v1';
 // Direct-mode model settings (proxy mode decides these server-side instead).
 const STT_MODEL = process.env.EXPO_PUBLIC_GROQ_STT_MODEL || 'whisper-large-v3';
 const LLM_MODEL = process.env.EXPO_PUBLIC_GROQ_MODEL || 'openai/gpt-oss-120b';
-const REASONING_EFFORT = process.env.EXPO_PUBLIC_GROQ_REASONING || 'high';
+// reasoning_effort for gpt-oss ('low' | 'medium' | 'high'). 'low' keeps token use
+// far under the free per-minute limit (TPM) while staying accurate for short
+// spoken-sentence corrections. Raise via EXPO_PUBLIC_GROQ_REASONING only if you
+// have headroom (then raise max_tokens too).
+const REASONING_EFFORT = process.env.EXPO_PUBLIC_GROQ_REASONING || 'low';
 
 function hasClientKey() {
   const k = GROQ_API_KEY;
@@ -89,13 +93,15 @@ export async function chatComplete(messages) {
     model: LLM_MODEL,
     messages,
     temperature: 0.3,
-    max_tokens: 4096,
+    // Small cap: with low reasoning the answer is short, and a big cap would
+    // reserve tokens against the free per-minute limit for no reason.
+    max_tokens: 1024,
     response_format: { type: 'json_object' },
   };
   if (LLM_MODEL.includes('gpt-oss')) {
     body.reasoning_effort = REASONING_EFFORT;
   }
-  const res = await fetch(`${GROQ_BASE}/chat/completions`, {
+  const res = await fetchWithRetry(`${GROQ_BASE}/chat/completions`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${getApiKey()}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -157,5 +163,17 @@ async function safeError(res) {
     return body?.error?.message || JSON.stringify(body);
   } catch (_) {
     return res.statusText || 'onbekende fout';
+  }
+}
+
+// Retries on 429 (per-minute rate limit), waiting the server-suggested time (or a
+// short backoff) so a busy minute does not surface as an error.
+async function fetchWithRetry(url, options, retries = 2) {
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(url, options);
+    if (res.status !== 429 || attempt >= retries) return res;
+    const headerWait = Number(res.headers.get('retry-after'));
+    const waitMs = Math.min(headerWait || (attempt + 1) * 4, 15) * 1000;
+    await new Promise((r) => setTimeout(r, waitMs));
   }
 }
