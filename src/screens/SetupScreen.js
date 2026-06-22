@@ -16,6 +16,7 @@ import {
   scenarioSuggestions,
   personaSuggestions,
 } from '../config/businessContext';
+import { theme } from '../config/theme';
 
 function Chip({ text, active, onPress }) {
   return (
@@ -26,7 +27,6 @@ function Chip({ text, active, onPress }) {
 }
 
 // Pre-call setup: choose the scenario (goal of the call) and the AI persona.
-// These are injected into the LLM system prompt by useConversation/buildSystemPrompt.
 export default function SetupScreen({ onStart, hasKnowledgeBase, onOpenKnowledgeBase }) {
   const [scenario, setScenario] = useState(defaultCallSetup.scenario);
   const [persona, setPersona] = useState(defaultCallSetup.persona);
@@ -43,16 +43,15 @@ export default function SetupScreen({ onStart, hasKnowledgeBase, onOpenKnowledge
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.title}>Business German Coach</Text>
-          <Text style={styles.subtitle}>Stel je gesprek in voordat je belt.</Text>
+          <Text style={styles.title}>Nieuw gesprek</Text>
 
-          <Text style={styles.label}>Scenario — wat is het doel van dit gesprek?</Text>
+          <Text style={styles.label}>Scenario</Text>
           <TextInput
             style={[styles.input, styles.inputMultiline]}
             value={scenario}
             onChangeText={setScenario}
-            placeholder="bijv. Bellen over een monsterpakket"
-            placeholderTextColor="#6B7280"
+            placeholder="Doel van het gesprek"
+            placeholderTextColor={theme.textFaint}
             multiline
           />
           <View style={styles.chips}>
@@ -61,13 +60,13 @@ export default function SetupScreen({ onStart, hasKnowledgeBase, onOpenKnowledge
             ))}
           </View>
 
-          <Text style={[styles.label, styles.labelSpaced]}>AI-persona — wie speelt de AI?</Text>
+          <Text style={[styles.label, styles.labelSpaced]}>AI-persona</Text>
           <TextInput
             style={styles.input}
             value={persona}
             onChangeText={setPersona}
-            placeholder="bijv. Supermarktmanager"
-            placeholderTextColor="#6B7280"
+            placeholder="Wie speelt de AI?"
+            placeholderTextColor={theme.textFaint}
           />
           <View style={styles.chips}>
             {personaSuggestions.map((p) => (
@@ -77,9 +76,7 @@ export default function SetupScreen({ onStart, hasKnowledgeBase, onOpenKnowledge
 
           <Pressable onPress={onOpenKnowledgeBase} style={styles.kbRow}>
             <Text style={[styles.kbStatus, hasKnowledgeBase ? styles.kbOn : styles.kbOff]}>
-              {hasKnowledgeBase
-                ? '✓ Kennisbank actief — de AI test je hierop'
-                : '⚠ Geen kennisbank — tik om in te vullen voor scherpere vragen'}
+              {hasKnowledgeBase ? 'Kennisbank actief' : 'Geen kennisbank — tik om in te vullen'}
             </Text>
           </Pressable>
 
@@ -88,13 +85,8 @@ export default function SetupScreen({ onStart, hasKnowledgeBase, onOpenKnowledge
             disabled={!canStart}
             style={[styles.startBtn, !canStart && styles.startDisabled]}
           >
-            <Text style={styles.startText}>Gesprek starten →</Text>
+            <Text style={styles.startText}>Gesprek starten</Text>
           </Pressable>
-
-          <Text style={styles.note}>
-            De AI speelt strikt deze persona, test je op de kennisbank en blijft
-            doorvragen — het gesprek stopt nooit vanzelf.
-          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -104,50 +96,49 @@ export default function SetupScreen({ onStart, hasKnowledgeBase, onOpenKnowledge
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#0B1220',
+    backgroundColor: theme.bg,
     paddingTop: Platform.OS === 'android' ? RNStatusBar.currentHeight : 0,
   },
   flex: { flex: 1 },
-  content: { padding: 24, paddingBottom: 48 },
-  title: { color: '#F9FAFB', fontSize: 26, fontWeight: '800', marginTop: 12 },
-  subtitle: { color: '#9CA3AF', fontSize: 14, marginTop: 4, marginBottom: 24 },
-  label: { color: '#E5E7EB', fontSize: 15, fontWeight: '700', marginBottom: 8 },
+  content: { padding: 24, paddingBottom: 40 },
+  title: { color: theme.text, fontSize: 26, fontWeight: '800', marginTop: 12, marginBottom: 24 },
+  label: { color: theme.text, fontSize: 14, fontWeight: '700', marginBottom: 8 },
   labelSpaced: { marginTop: 24 },
   input: {
-    backgroundColor: '#111827',
-    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: theme.inputBg,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 12,
-    color: '#F9FAFB',
+    color: theme.text,
     fontSize: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-  inputMultiline: { minHeight: 64, textAlignVertical: 'top' },
+  inputMultiline: { minHeight: 56, textAlignVertical: 'top' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   chip: {
-    borderColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: theme.surfaceAlt,
+    borderColor: theme.border,
     borderWidth: 1,
     borderRadius: 999,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 13,
   },
-  chipActive: { backgroundColor: '#1D4ED8', borderColor: '#1D4ED8' },
-  chipText: { color: '#D1D5DB', fontSize: 13 },
-  chipTextActive: { color: '#fff', fontWeight: '700' },
+  chipActive: { backgroundColor: theme.accent, borderColor: theme.accent },
+  chipText: { color: theme.textMuted, fontSize: 13 },
+  chipTextActive: { color: theme.onAccent, fontWeight: '700' },
   kbRow: { marginTop: 24 },
   kbStatus: { fontSize: 13, fontWeight: '600' },
-  kbOn: { color: '#6EE7B7' },
-  kbOff: { color: '#FBBF24' },
+  kbOn: { color: theme.success },
+  kbOff: { color: theme.accentDark },
   startBtn: {
-    marginTop: 16,
-    backgroundColor: '#10B981',
-    borderRadius: 16,
-    height: 56,
+    marginTop: 20,
+    backgroundColor: theme.accent,
+    borderRadius: 14,
+    height: 54,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  startDisabled: { backgroundColor: '#374151' },
-  startText: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  note: { color: '#6B7280', fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 16 },
+  startDisabled: { backgroundColor: theme.textFaint },
+  startText: { color: theme.onAccent, fontSize: 17, fontWeight: '800' },
 });
