@@ -19,11 +19,11 @@ const GROQ_BASE = 'https://api.groq.com/openai/v1';
 // Direct-mode model settings (proxy mode decides these server-side instead).
 const STT_MODEL = process.env.EXPO_PUBLIC_GROQ_STT_MODEL || 'whisper-large-v3';
 const LLM_MODEL = process.env.EXPO_PUBLIC_GROQ_MODEL || 'openai/gpt-oss-120b';
-// reasoning_effort for gpt-oss ('low' | 'medium' | 'high'). 'low' keeps token use
-// far under the free per-minute limit (TPM) while staying accurate for short
-// spoken-sentence corrections. Raise via EXPO_PUBLIC_GROQ_REASONING only if you
-// have headroom (then raise max_tokens too).
-const REASONING_EFFORT = process.env.EXPO_PUBLIC_GROQ_REASONING || 'low';
+// reasoning_effort for gpt-oss ('low' | 'medium' | 'high'). 'medium' gives solid
+// grammar corrections; with the modest max_tokens below, the manual (non-hands-free)
+// default pace, and the 429 retry, it stays within the free per-minute limit.
+// Override with EXPO_PUBLIC_GROQ_REASONING.
+const REASONING_EFFORT = process.env.EXPO_PUBLIC_GROQ_REASONING || 'medium';
 
 function hasClientKey() {
   const k = GROQ_API_KEY;
@@ -93,9 +93,9 @@ export async function chatComplete(messages) {
     model: LLM_MODEL,
     messages,
     temperature: 0.3,
-    // Small cap: with low reasoning the answer is short, and a big cap would
-    // reserve tokens against the free per-minute limit for no reason.
-    max_tokens: 1024,
+    // Room for medium reasoning plus the short JSON answer, without reserving so
+    // much that it needlessly trips the free per-minute limit.
+    max_tokens: 2048,
     response_format: { type: 'json_object' },
   };
   if (LLM_MODEL.includes('gpt-oss')) {
@@ -128,6 +128,9 @@ function getApiKey() {
 // reply }, even if the model wraps the JSON in stray text.
 function parseStructuredResponse(content) {
   const empty = { feedback_dutch: '', feedback_german_example: '', reply: '' };
+  if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    console.log('[LLM raw]', (content || '').slice(0, 700));
+  }
   if (!content) return empty;
 
   try {
@@ -144,6 +147,9 @@ function parseStructuredResponse(content) {
       }
     }
     // Last resort: treat the whole thing as the spoken (German) reply.
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      console.warn('[LLM] kon geen geldige JSON lezen; hele tekst gaat naar reply');
+    }
     return { ...empty, reply: content.trim() };
   }
 }

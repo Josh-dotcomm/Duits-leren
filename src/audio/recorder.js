@@ -22,9 +22,9 @@ export async function requestMicPermission() {
 // silence; raise it (for example -30) in noisy places like a moving car.
 export async function startRecording({
   onSilence,
-  silenceMs = 2500,
+  silenceMs = 3500,
   thresholdDb = -40,
-  maxMs = 30000,
+  maxMs = 15000,
 } = {}) {
   if (activeRecording) {
     // Defensive: clean up a leftover recording before starting a new one.
@@ -70,21 +70,32 @@ export async function stopRecording() {
 // `silenceMs`, or after a hard `maxMs` safety cap.
 function makeSilenceDetector(onSilence, silenceMs, thresholdDb, maxMs) {
   const start = Date.now();
+  const minMs = 1500; // never auto-stop in the first moment after opening the mic
   let lastLoud = start;
   let spoke = false;
   let fired = false;
+  let logged = false;
   return (status) => {
     if (fired || !status?.isRecording) return;
     const now = Date.now();
-    const level = typeof status.metering === 'number' ? status.metering : -160;
+    const hasMetering = typeof status.metering === 'number';
+    const level = hasMetering ? status.metering : -160;
+    // Log the first reading so we can confirm metering works and on what scale.
+    if (typeof __DEV__ !== 'undefined' && __DEV__ && !logged) {
+      logged = true;
+      console.log('[mic] eerste metering:', hasMetering ? status.metering : 'GEEN (undefined)');
+    }
     if (level > thresholdDb) {
       lastLoud = now;
       spoke = true;
     }
-    const quietLongEnough = spoke && now - lastLoud >= silenceMs;
+    const quietLongEnough = spoke && now - start >= minMs && now - lastLoud >= silenceMs;
     const tooLong = now - start >= maxMs;
     if (quietLongEnough || tooLong) {
       fired = true;
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.log('[mic] auto-stop reden:', tooLong ? 'max-tijd' : 'stilte', '| gesproken:', spoke);
+      }
       onSilence();
     }
   };

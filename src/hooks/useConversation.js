@@ -21,12 +21,13 @@ export const STATUS = {
 };
 
 // Hands-free tuning. SILENCE_MS = how long the speaker must be quiet before we
-// auto-send; SILENCE_THRESHOLD_DB = the dBFS level below which audio counts as
-// silence (raise toward -30 for a noisy car); RESUME_DELAY_MS = small pause after
-// the AI finishes talking before the mic reopens, so it does not catch the tail.
-const SILENCE_MS = 2500;
+// auto-send (kept generous so a learner pausing to think is not cut off);
+// SILENCE_THRESHOLD_DB = the dBFS level below which audio counts as silence (raise
+// toward -30 for a noisy car); RESUME_DELAY_MS = pause after the AI finishes before
+// the mic reopens, so it does not catch the tail of the spoken answer.
+const SILENCE_MS = 3500;
 const SILENCE_THRESHOLD_DB = -40;
-const RESUME_DELAY_MS = 500;
+const RESUME_DELAY_MS = 800;
 
 let turnCounter = 0;
 
@@ -35,12 +36,12 @@ export function useConversation(setup) {
   const [status, setStatus] = useState(STATUS.IDLE);
   const [turns, setTurns] = useState([]); // [{ id, you, feedbackDutch, feedbackGermanExample, reply, done }]
   const [error, setError] = useState(null);
-  const [handsFree, setHandsFreeState] = useState(true); // hands-free conversation (car mode)
+  const [handsFree, setHandsFreeState] = useState(false); // opt-in (car mode); manual is default
   const [sessionActive, setSessionActiveState] = useState(false); // hands-free loop running
 
   const historyRef = useRef([]);
   const processingRef = useRef(false); // ensures a recording is processed exactly once
-  const handsFreeRef = useRef(true); // mirror for use inside callbacks
+  const handsFreeRef = useRef(false); // mirror for use inside callbacks
   const sessionRef = useRef(false); // mirror for use inside callbacks
   const startRecRef = useRef(null); // latest startRec, for use in timers/handlers
   const processRef = useRef(null); // latest processRecording
