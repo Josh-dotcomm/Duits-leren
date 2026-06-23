@@ -8,7 +8,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 
 const GROQ_BASE = 'https://api.groq.com/openai/v1';
 const LLM_MODEL = Deno.env.get('GROQ_MODEL') ?? 'openai/gpt-oss-120b';
-const REASONING = Deno.env.get('GROQ_REASONING') ?? 'low';
+const REASONING = Deno.env.get('GROQ_REASONING') ?? 'medium';
 
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
       model: LLM_MODEL,
       messages,
       temperature: 0.3,
-      max_tokens: 1024,
+      max_tokens: 2048,
       response_format: { type: 'json_object' },
     };
     if (LLM_MODEL.includes('gpt-oss')) body.reasoning_effort = REASONING;

@@ -137,8 +137,8 @@ foreground-service config are in `app.json`; for locked-screen audio build a dev
 
 - Model/latency tuning: set `EXPO_PUBLIC_GROQ_MODEL` (e.g. `llama-3.3-70b-versatile` for
   lower latency, `llama-3.1-8b-instant` for max speed) and `EXPO_PUBLIC_GROQ_REASONING`
-  (low/medium/high, gpt-oss only) in `.env`. Default is `openai/gpt-oss-120b` at low,
-  which keeps token use within the free per-minute limit (TPM).
+  (low/medium/high, gpt-oss only) in `.env`. Default is `openai/gpt-oss-120b` at medium
+  (good corrections while fitting the free per-minute limit at a normal pace).
 - API keys: Supabase URL + anon key are baked into `src/config/secrets.js` (safe to ship).
   The Groq key is NOT shipped; in production the app calls Supabase Edge Functions that hold
   it server-side. See "Keeping the Groq key server-side".
